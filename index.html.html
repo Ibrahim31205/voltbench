@@ -1,0 +1,3070 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoltBench — Electronics & Engineering Workbench</title>
+
+  <!-- Google Fonts with safe system fallbacks -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#090d16',
+            panel: '#111827',
+            elevated: '#161f32',
+            cyanAccent: '#38bdf8',
+            emeraldAccent: '#10b981',
+            amberAccent: '#f59e0b',
+            inkPrimary: '#f1f5f9',
+            inkMuted: '#94a3b8'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* =========================================================================
+       VOLTBENCH CUSTOM THEME TOKENS & MICRO-INTERACTIONS
+       ========================================================================= */
+    :root {
+      --bg-base: #090d16;
+      --bg-card: #111827;
+      --bg-elevated: #161f32;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+    }
+
+    html, body {
+      background-color: var(--bg-base);
+      color: #f1f5f9;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Subtle ambient backdrop gradient */
+    .ambient-grid {
+      background-image:
+        radial-gradient(circle at 15% 0%, rgba(56, 189, 248, 0.07), transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(16, 185, 129, 0.04), transparent 35%);
+    }
+
+    /* Refined subtle 1px borders */
+    .vb-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.5);
+    }
+
+    .vb-control {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* Custom sleek range slider styling */
+    input[type="range"].vb-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 9999px;
+      background: #1e293b;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"].vb-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 9999px;
+      background: #38bdf8;
+      border: 2px solid #090d16;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    input[type="range"].vb-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+      box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.3);
+    }
+    input[type="range"].vb-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 9999px;
+      background: #38bdf8;
+      border: 2px solid #090d16;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    /* Smooth page fade-in transition */
+    .page-view {
+      animation: fadeSlideIn 0.22s ease-out;
+    }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Resistor band smooth color transition */
+    .resistor-band {
+      transition: fill 0.22s ease, opacity 0.22s ease;
+    }
+
+    /* Glowing effects for active digital/logic elements */
+    .glow-cyan {
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Remove number input arrows for cleaner technical UI */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="ambient-grid min-h-screen font-sans text-inkPrimary selection:bg-sky-500/30 selection:text-sky-200">
+
+  <!-- =========================================================================
+       MOBILE TOP BAR (Visible < lg)
+       ========================================================================= -->
+  <header class="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-[#090d16]/90 backdrop-blur-md border-b border-white/[0.08]">
+    <div class="flex items-center gap-2.5">
+      <button id="mobile-menu-btn" aria-label="Open Navigation" class="p-2 -ml-1 rounded-xl vb-control text-inkPrimary hover:text-cyanAccent transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-cyanAccent">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
+          </svg>
+        </div>
+        <span class="font-bold tracking-tight text-base">Volt<span class="text-cyanAccent">Bench</span></span>
+      </div>
+    </div>
+    <span id="mobile-page-badge" class="text-xs font-mono px-2.5 py-1 rounded-full bg-sky-500/10 text-cyanAccent border border-sky-400/20">Dashboard</span>
+  </header>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebar-backdrop" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm hidden lg:hidden transition-opacity"></div>
+
+  <!-- =========================================================================
+       FIXED LEFT SIDEBAR NAVIGATION
+       ========================================================================= -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-[#0c1220] border-r border-white/[0.08] flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out">
+    <div>
+      <!-- Brand Header -->
+      <div class="px-5 py-5 border-b border-white/[0.08] flex items-center justify-between">
+        <button onclick="navigateTo('dashboard')" class="flex items-center gap-3 text-left group">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400/20 to-sky-600/10 border border-sky-400/30 flex items-center justify-center text-cyanAccent group-hover:glow-cyan transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
+            </svg>
+          </div>
+          <div>
+            <div class="font-bold text-lg leading-tight tracking-tight">Volt<span class="text-cyanAccent">Bench</span></div>
+            <div class="text-[11px] font-mono text-inkMuted tracking-wide">EE WORKBENCH v2.4</div>
+          </div>
+        </button>
+        <button id="mobile-close-btn" aria-label="Close Navigation" class="lg:hidden p-1.5 rounded-lg text-inkMuted hover:text-white hover:bg-white/5">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="p-3 space-y-1.5" aria-label="Workbench Modules">
+        <div class="px-3 pt-2 pb-1 text-[10px] font-mono uppercase tracking-widest text-slate-500">Modules</div>
+
+        <button data-nav="dashboard" onclick="navigateTo('dashboard')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-left">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span>Dashboard</span>
+        </button>
+
+        <button data-nav="resistor" onclick="navigateTo('resistor')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-left">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2 12h4l2-5 3 10 3-10 2 5h6" />
+          </svg>
+          <span>Resistor Lab</span>
+        </button>
+
+        <button data-nav="calculators" onclick="navigateTo('calculators')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-left">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          <span>Circuit Calculators</span>
+        </button>
+
+        <button data-nav="rc-filter" onclick="navigateTo('rc-filter')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-left">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 17c3-8 6-12 9-12s6 10 9 10" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18" />
+          </svg>
+          <span>RC Signal & Filter</span>
+        </button>
+
+        <button data-nav="digital" onclick="navigateTo('digital')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-left">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+          </svg>
+          <span>Digital & Logic Lab</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Sidebar Footer: Bench Status & Quick Reset -->
+    <div class="p-4 border-t border-white/[0.08] space-y-3">
+      <div class="px-3 py-2.5 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <span class="text-xs font-mono text-emerald-300">BENCH ONLINE</span>
+        </div>
+        <span class="text-[11px] font-mono text-inkMuted">60Hz</span>
+      </div>
+
+      <button onclick="resetCurrentModule()" class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl vb-control text-xs font-medium text-inkMuted hover:text-inkPrimary hover:border-sky-400/30 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Reset Active Tool
+      </button>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       MAIN CONTENT AREA
+       ========================================================================= -->
+  <main class="lg:pl-64 min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+      <!-- =====================================================================
+           PAGE 1: DASHBOARD (HOME)
+           ===================================================================== -->
+      <section id="page-dashboard" class="page-view space-y-8">
+        <!-- Hero Banner -->
+        <div class="vb-card rounded-2xl p-6 sm:p-8 relative overflow-hidden">
+          <div class="absolute -right-12 -top-12 w-56 h-56 rounded-full bg-sky-500/10 blur-3xl pointer-events-none"></div>
+          <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="space-y-2.5 max-w-2xl">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-400/20 text-cyanAccent text-xs font-mono">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyanAccent"></span>
+                PRECISION ELECTRONICS SUITE
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Welcome to <span class="text-cyanAccent">VoltBench</span>
+              </h1>
+              <p class="text-sm sm:text-base text-inkMuted leading-relaxed">
+                Your unified dark-mode engineering workbench. Decode color-band resistors, solve Ohm's Law &amp; divider circuits, plot real-time RC step &amp; Bode responses, and test 8-bit digital logic—all with zero latency.
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-3 shrink-0">
+              <button onclick="navigateTo('resistor')" class="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-sm transition shadow-lg shadow-sky-500/20">
+                Launch Resistor Lab
+              </button>
+              <button onclick="navigateTo('rc-filter')" class="px-4 py-2.5 rounded-xl vb-control hover:border-sky-400/40 text-inkPrimary font-medium text-sm transition">
+                Open Signal Plotter
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick-Launch Tool Cards -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-mono uppercase tracking-wider text-inkMuted">Workbench Instruments</h2>
+            <span class="text-xs text-slate-500 font-mono">4 Interactive Modules</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <!-- Card 1 -->
+            <button onclick="navigateTo('resistor')" class="vb-card rounded-2xl p-5 text-left group hover:border-sky-400/40 transition flex flex-col justify-between gap-4">
+              <div class="space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-400/20 flex items-center justify-center text-cyanAccent group-hover:scale-105 transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2 12h4l2-5 3 10 3-10 2 5h6" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-base text-white group-hover:text-cyanAccent transition">Resistor Lab</h3>
+                  <p class="text-xs text-inkMuted mt-1 leading-relaxed">Interactive 4 &amp; 5-band SVG decoder, tolerance bounds, and reverse E24 lookup.</p>
+                </div>
+              </div>
+              <div class="text-xs font-mono text-cyanAccent flex items-center gap-1">
+                Open Tool <span class="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </button>
+
+            <!-- Card 2 -->
+            <button onclick="navigateTo('calculators')" class="vb-card rounded-2xl p-5 text-left group hover:border-emerald-400/40 transition flex flex-col justify-between gap-4">
+              <div class="space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center text-emeraldAccent group-hover:scale-105 transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-base text-white group-hover:text-emeraldAccent transition">Circuit Calculators</h3>
+                  <p class="text-xs text-inkMuted mt-1 leading-relaxed">Ohm's Law solver, live Voltage Divider schematic with load, and LED resistor finder.</p>
+                </div>
+              </div>
+              <div class="text-xs font-mono text-emeraldAccent flex items-center gap-1">
+                Open Tool <span class="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </button>
+
+            <!-- Card 3 -->
+            <button onclick="navigateTo('rc-filter')" class="vb-card rounded-2xl p-5 text-left group hover:border-amber-400/40 transition flex flex-col justify-between gap-4">
+              <div class="space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-400/20 flex items-center justify-center text-amberAccent group-hover:scale-105 transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 17c3-8 6-12 9-12s6 10 9 10" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-base text-white group-hover:text-amberAccent transition">RC Signal &amp; Filter</h3>
+                  <p class="text-xs text-inkMuted mt-1 leading-relaxed">60fps HTML5 Canvas plotter for RC charging curves (0–5τ) and Bode filter magnitude.</p>
+                </div>
+              </div>
+              <div class="text-xs font-mono text-amberAccent flex items-center gap-1">
+                Open Tool <span class="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </button>
+
+            <!-- Card 4 -->
+            <button onclick="navigateTo('digital')" class="vb-card rounded-2xl p-5 text-left group hover:border-purple-400/40 transition flex flex-col justify-between gap-4">
+              <div class="space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-400/20 flex items-center justify-center text-purple-400 group-hover:scale-105 transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-base text-white group-hover:text-purple-400 transition">Digital &amp; Logic Lab</h3>
+                  <p class="text-xs text-inkMuted mt-1 leading-relaxed">8-bit interactive binary switches, live base converter, and logic gate simulator.</p>
+                </div>
+              </div>
+              <div class="text-xs font-mono text-purple-400 flex items-center gap-1">
+                Open Tool <span class="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Formulas + Lab Scratchpad Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Interactive Quick Reference Formula Cards -->
+          <div class="lg:col-span-7 space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-sm font-mono uppercase tracking-wider text-inkMuted">Quick Reference Formulas</h2>
+              <span class="text-xs text-slate-500">Click any card to copy</span>
+            </div>
+            <div id="formula-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <!-- Populated via JS for crisp interactivity -->
+            </div>
+          </div>
+
+          <!-- Persistent Lab Scratchpad -->
+          <div class="lg:col-span-5 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-sm font-mono uppercase tracking-wider text-inkMuted">Lab Scratchpad</h2>
+              <span id="scratchpad-status" class="text-[11px] font-mono text-emeraldAccent flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span> Auto-saved
+              </span>
+            </div>
+            <div class="vb-card rounded-2xl p-4 flex-1 flex flex-col gap-3">
+              <textarea
+                id="lab-scratchpad"
+                rows="10"
+                placeholder="Jot down resistor values, pinouts, test measurements, or design notes... Everything auto-saves locally."
+                class="w-full flex-1 min-h-[220px] resize-none rounded-xl vb-control p-3.5 text-sm font-mono text-inkPrimary placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition leading-relaxed"
+              ></textarea>
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div class="text-xs font-mono text-inkMuted">
+                  <span id="scratchpad-chars">0</span> chars · <span id="scratchpad-lines">1</span> lines
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="copyScratchpad()" class="px-3 py-1.5 rounded-lg vb-control hover:border-sky-400/40 text-xs font-medium text-inkPrimary hover:text-cyanAccent transition flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copy
+                  </button>
+                  <button id="scratchpad-clear-btn" onclick="clearScratchpad()" class="px-3 py-1.5 rounded-lg vb-control hover:border-rose-400/40 text-xs font-medium text-inkMuted hover:text-rose-400 transition">
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           PAGE 2: RESISTOR LAB
+           ===================================================================== -->
+      <section id="page-resistor" class="page-view hidden space-y-6">
+        <!-- Header & Mode Toggle -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Resistor Lab</h1>
+            <p class="text-sm text-inkMuted mt-0.5">Color-band decoder, tolerance calculator, and standard E24 reverse lookup.</p>
+          </div>
+          <div class="inline-flex p-1 rounded-xl vb-control self-start sm:self-auto">
+            <button id="btn-mode-4band" onclick="setResistorMode(4)" class="px-4 py-2 rounded-lg text-xs font-semibold font-mono transition">4-Band</button>
+            <button id="btn-mode-5band" onclick="setResistorMode(5)" class="px-4 py-2 rounded-lg text-xs font-semibold font-mono transition">5-Band</button>
+          </div>
+        </div>
+
+        <!-- Main Resistor Visual + Readout Card -->
+        <div class="vb-card rounded-2xl p-6 space-y-6">
+          <!-- Interactive SVG Resistor -->
+          <div class="w-full rounded-2xl bg-[#0b101d] border border-white/[0.06] p-4 sm:p-6 flex flex-col items-center justify-center">
+            <svg id="resistor-svg" viewBox="0 0 640 190" class="w-full max-w-2xl h-auto select-none" role="img" aria-label="Interactive Resistor Color Band Graphic">
+              <defs>
+                <!-- Metallic Lead Gradient -->
+                <linearGradient id="leadGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#cbd5e1" />
+                  <stop offset="45%" stop-color="#f8fafc" />
+                  <stop offset="75%" stop-color="#94a3b8" />
+                  <stop offset="100%" stop-color="#475569" />
+                </linearGradient>
+                <!-- Carbon Film Tan Body (4-Band) -->
+                <linearGradient id="bodyTan" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#e7cfa6" />
+                  <stop offset="22%" stop-color="#f3e1bf" />
+                  <stop offset="65%" stop-color="#c9a875" />
+                  <stop offset="100%" stop-color="#8b6d43" />
+                </linearGradient>
+                <!-- Metal Film Precision Blue Body (5-Band) -->
+                <linearGradient id="bodyBlue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#60a5fa" />
+                  <stop offset="22%" stop-color="#93c5fd" />
+                  <stop offset="65%" stop-color="#2563eb" />
+                  <stop offset="100%" stop-color="#1e3a8a" />
+                </linearGradient>
+                <!-- Metallic Band Gradients -->
+                <linearGradient id="bandGold" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#fef08a" />
+                  <stop offset="45%" stop-color="#eab308" />
+                  <stop offset="100%" stop-color="#a16207" />
+                </linearGradient>
+                <linearGradient id="bandSilver" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f8fafc" />
+                  <stop offset="45%" stop-color="#cbd5e1" />
+                  <stop offset="100%" stop-color="#64748b" />
+                </linearGradient>
+                <!-- Specular Gloss Overlay -->
+                <linearGradient id="bodyGloss" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32" />
+                  <stop offset="28%" stop-color="#ffffff" stop-opacity="0.06" />
+                  <stop offset="70%" stop-color="#000000" stop-opacity="0" />
+                  <stop offset="100%" stop-color="#000000" stop-opacity="0.32" />
+                </linearGradient>
+                <filter id="resShadow" x="-10%" y="-20%" width="120%" height="150%">
+                  <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000000" flood-opacity="0.55" />
+                </filter>
+                <!-- Clip Path matching contoured resistor body -->
+                <clipPath id="resBodyClip">
+                  <path d="M 145,44 C 145,32 158,28 182,28 C 204,28 212,38 232,38 L 408,38 C 428,38 436,28 458,28 C 482,28 495,32 495,44 L 495,126 C 495,138 482,142 458,142 C 436,142 428,132 408,132 L 232,132 C 212,132 204,142 182,142 C 158,142 145,138 145,126 Z" />
+                </clipPath>
+              </defs>
+
+              <!-- Wire Leads -->
+              <rect x="20" y="77" width="130" height="16" rx="4" fill="url(#leadGrad)" />
+              <rect x="490" y="77" width="130" height="16" rx="4" fill="url(#leadGrad)" />
+
+              <!-- Contoured Resistor Body -->
+              <g filter="url(#resShadow)">
+                <path id="res-body-shape" d="M 145,44 C 145,32 158,28 182,28 C 204,28 212,38 232,38 L 408,38 C 428,38 436,28 458,28 C 482,28 495,32 495,44 L 495,126 C 495,138 482,142 458,142 C 436,142 428,132 408,132 L 232,132 C 212,132 204,142 182,142 C 158,142 145,138 145,126 Z" fill="url(#bodyTan)" />
+
+                <!-- Dynamic Color Bands (Clipped cleanly to body) -->
+                <g clip-path="url(#resBodyClip)">
+                  <rect id="svg-band-0" class="resistor-band" x="180" y="20" width="26" height="130" fill="#eab308" />
+                  <rect id="svg-band-1" class="resistor-band" x="242" y="20" width="26" height="130" fill="#7c3aed" />
+                  <rect id="svg-band-2" class="resistor-band" x="296" y="20" width="26" height="130" fill="#ef4444" />
+                  <rect id="svg-band-3" class="resistor-band" x="350" y="20" width="26" height="130" fill="#ef4444" />
+                  <rect id="svg-band-4" class="resistor-band" x="438" y="20" width="26" height="130" fill="url(#bandGold)" />
+                  <!-- Cylindrical Gloss Overlay over bands -->
+                  <rect x="140" y="24" width="360" height="122" fill="url(#bodyGloss)" pointer-events="none" />
+                </g>
+              </g>
+
+              <!-- Band Pointer Labels -->
+              <g id="svg-band-labels" font-family="JetBrains Mono, monospace" font-size="11" fill="#94a3b8" text-anchor="middle">
+                <text id="lbl-band-0" x="193" y="172">1st</text>
+                <text id="lbl-band-1" x="255" y="172">2nd</text>
+                <text id="lbl-band-2" x="309" y="172">3rd</text>
+                <text id="lbl-band-3" x="363" y="172">Mult</text>
+                <text id="lbl-band-4" x="451" y="172">Tol</text>
+              </g>
+            </svg>
+          </div>
+
+          <!-- Live Readout Bar -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div class="md:col-span-2 flex flex-wrap items-center gap-4 sm:gap-6">
+              <div>
+                <div class="text-xs font-mono uppercase tracking-wider text-inkMuted">Resistance</div>
+                <div class="flex items-baseline gap-2.5 mt-1">
+                  <span id="res-value-display" class="text-3xl sm:text-4xl font-bold font-mono text-cyanAccent">4.7 kΩ</span>
+                  <span id="res-tol-display" class="px-2.5 py-0.5 rounded-full text-sm font-mono font-semibold bg-amber-500/15 text-amberAccent border border-amber-400/25">±5%</span>
+                </div>
+              </div>
+              <div class="h-10 w-px bg-white/10 hidden sm:block"></div>
+              <div>
+                <div class="text-xs font-mono uppercase tracking-wider text-inkMuted">Tolerance Range (Min – Max)</div>
+                <div id="res-range-display" class="text-sm sm:text-base font-mono text-inkPrimary mt-1.5">4.465 kΩ – 4.935 kΩ</div>
+              </div>
+            </div>
+            <div class="flex md:justify-end">
+              <button onclick="copyResistorResult()" class="w-full md:w-auto px-4 py-2.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-cyanAccent border border-sky-400/30 font-medium text-sm transition flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy Result
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reverse Lookup Card -->
+        <div class="vb-card rounded-2xl p-5">
+          <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+            <div class="flex-1 space-y-2">
+              <label for="res-reverse-input" class="block text-xs font-mono uppercase tracking-wider text-inkMuted">
+                Reverse Lookup — Enter Value (e.g., 4.7k, 4k7, 10000, 220, 1.5M)
+              </label>
+              <div class="flex flex-col sm:flex-row gap-2.5">
+                <input
+                  id="res-reverse-input"
+                  type="text"
+                  placeholder="e.g. 4.7k or 220 or 10000"
+                  class="flex-1 rounded-xl vb-control px-4 py-2.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50"
+                />
+                <button onclick="runReverseResistorLookup()" class="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-sm transition shrink-0">
+                  Find Bands
+                </button>
+              </div>
+              <div id="res-reverse-feedback" class="text-xs font-mono text-inkMuted min-h-[18px]"></div>
+            </div>
+
+            <!-- Nearest Standard E24 Callout -->
+            <div id="res-e24-box" class="hidden lg:min-w-[270px] rounded-xl bg-emerald-500/[0.08] border border-emerald-500/25 px-4 py-3 flex items-center justify-between gap-3">
+              <div>
+                <div class="text-[11px] font-mono uppercase text-emerald-300/80">Nearest E24 Standard</div>
+                <div id="res-e24-value" class="text-lg font-bold font-mono text-emeraldAccent">--</div>
+              </div>
+              <button id="res-e24-apply-btn" onclick="applyE24Suggestion()" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-mono transition">
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Band Selector Columns -->
+        <div id="resistor-selectors" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Dynamically populated for 4-band or 5-band -->
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           PAGE 3: CIRCUIT CALCULATORS
+           ===================================================================== -->
+      <section id="page-calculators" class="page-view hidden space-y-6">
+        <!-- Header & Calculator Tabs -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Circuit Calculators</h1>
+            <p class="text-sm text-inkMuted mt-0.5">Interactive Ohm's Law solver, Voltage Divider with live schematic, and LED resistor sizing.</p>
+          </div>
+          <div class="inline-flex flex-wrap p-1 rounded-xl vb-control gap-1 self-start">
+            <button data-calc-tab="ohms" onclick="switchCalcTab('ohms')" class="calc-tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold transition">Ohm's Law</button>
+            <button data-calc-tab="divider" onclick="switchCalcTab('divider')" class="calc-tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold transition">Voltage Divider</button>
+            <button data-calc-tab="led" onclick="switchCalcTab('led')" class="calc-tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold transition">LED Resistor</button>
+          </div>
+        </div>
+
+        <!-- SUB-TAB A: OHM'S LAW & POWER SOLVER -->
+        <div id="calc-panel-ohms" class="calc-panel space-y-5">
+          <div class="vb-card rounded-2xl p-6 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
+              <div>
+                <h2 class="text-lg font-semibold text-white">Ohm's Law &amp; Power Solver</h2>
+                <p class="text-xs text-inkMuted mt-0.5">Enter any <span class="text-cyanAccent font-medium">2 values</span> to automatically calculate the remaining 2 quantities.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="solveOhmsLaw(true)" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition">Solve</button>
+                <button onclick="clearOhmsLaw()" class="px-4 py-2 rounded-xl vb-control hover:border-white/20 text-inkMuted hover:text-white text-xs font-medium transition">Clear</button>
+              </div>
+            </div>
+
+            <!-- 4 Parameter Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Voltage -->
+              <div id="ohms-card-V" class="rounded-xl p-4 bg-[#0d1424] border border-white/[0.08] space-y-2.5 transition">
+                <div class="flex items-center justify-between">
+                  <label for="ohms-V" class="text-xs font-mono uppercase tracking-wider text-inkMuted">Voltage (V)</label>
+                  <span id="ohms-tag-V" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-slate-400">IDLE</span>
+                </div>
+                <div class="flex gap-2">
+                  <input id="ohms-V" type="number" step="any" placeholder="0.00" oninput="onOhmsInput('V')" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-lg font-mono text-white focus:outline-none focus:border-sky-400" />
+                  <select id="ohms-unit-V" onchange="onOhmsUnitChange('V')" class="rounded-xl vb-control px-3 py-2 text-sm font-mono text-cyanAccent focus:outline-none focus:border-sky-400">
+                    <option value="1" selected>V</option>
+                    <option value="0.001">mV</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Current -->
+              <div id="ohms-card-I" class="rounded-xl p-4 bg-[#0d1424] border border-white/[0.08] space-y-2.5 transition">
+                <div class="flex items-center justify-between">
+                  <label for="ohms-I" class="text-xs font-mono uppercase tracking-wider text-inkMuted">Current (I)</label>
+                  <span id="ohms-tag-I" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-slate-400">IDLE</span>
+                </div>
+                <div class="flex gap-2">
+                  <input id="ohms-I" type="number" step="any" placeholder="0.00" oninput="onOhmsInput('I')" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-lg font-mono text-white focus:outline-none focus:border-sky-400" />
+                  <select id="ohms-unit-I" onchange="onOhmsUnitChange('I')" class="rounded-xl vb-control px-3 py-2 text-sm font-mono text-cyanAccent focus:outline-none focus:border-sky-400">
+                    <option value="1">A</option>
+                    <option value="0.001" selected>mA</option>
+                    <option value="0.000001">µA</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Resistance -->
+              <div id="ohms-card-R" class="rounded-xl p-4 bg-[#0d1424] border border-white/[0.08] space-y-2.5 transition">
+                <div class="flex items-center justify-between">
+                  <label for="ohms-R" class="text-xs font-mono uppercase tracking-wider text-inkMuted">Resistance (R)</label>
+                  <span id="ohms-tag-R" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-slate-400">IDLE</span>
+                </div>
+                <div class="flex gap-2">
+                  <input id="ohms-R" type="number" step="any" placeholder="0.00" oninput="onOhmsInput('R')" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-lg font-mono text-white focus:outline-none focus:border-sky-400" />
+                  <select id="ohms-unit-R" onchange="onOhmsUnitChange('R')" class="rounded-xl vb-control px-3 py-2 text-sm font-mono text-cyanAccent focus:outline-none focus:border-sky-400">
+                    <option value="1" selected>Ω</option>
+                    <option value="1000">kΩ</option>
+                    <option value="1000000">MΩ</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Power -->
+              <div id="ohms-card-P" class="rounded-xl p-4 bg-[#0d1424] border border-white/[0.08] space-y-2.5 transition">
+                <div class="flex items-center justify-between">
+                  <label for="ohms-P" class="text-xs font-mono uppercase tracking-wider text-inkMuted">Power (P)</label>
+                  <span id="ohms-tag-P" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-slate-400">IDLE</span>
+                </div>
+                <div class="flex gap-2">
+                  <input id="ohms-P" type="number" step="any" placeholder="0.00" oninput="onOhmsInput('P')" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-lg font-mono text-white focus:outline-none focus:border-sky-400" />
+                  <select id="ohms-unit-P" onchange="onOhmsUnitChange('P')" class="rounded-xl vb-control px-3 py-2 text-sm font-mono text-cyanAccent focus:outline-none focus:border-sky-400">
+                    <option value="1">W</option>
+                    <option value="0.001" selected>mW</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Validation / Status Message + Wattage Recommendation -->
+            <div id="ohms-message" class="hidden text-xs font-mono px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-300"></div>
+
+            <div class="rounded-xl bg-[#0b101d] border border-white/[0.08] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="text-xs font-mono uppercase tracking-wider text-inkMuted">Recommended Resistor Wattage Rating (2× Safety Derating)</div>
+                <div class="flex items-center gap-3">
+                  <span id="ohms-wattage-badge" class="text-xl font-bold font-mono text-emeraldAccent">1/4 W (0.25 W)</span>
+                  <span id="ohms-power-note" class="text-xs font-mono text-inkMuted">Dissipating 0 mW</span>
+                </div>
+              </div>
+              <div class="w-full sm:w-48 space-y-1.5">
+                <div class="flex justify-between text-[11px] font-mono text-inkMuted">
+                  <span>Thermal Load</span>
+                  <span id="ohms-load-pct">0%</span>
+                </div>
+                <div class="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+                  <div id="ohms-load-bar" class="h-full bg-emerald-400 rounded-full transition-all duration-300" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-TAB B: VOLTAGE DIVIDER & LIVE SCHEMATIC -->
+        <div id="calc-panel-divider" class="calc-panel hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Controls -->
+            <div class="lg:col-span-6 vb-card rounded-2xl p-6 space-y-5">
+              <div class="border-b border-white/[0.08] pb-3">
+                <h2 class="text-lg font-semibold text-white">Voltage Divider Parameters</h2>
+                <p class="text-xs text-inkMuted mt-0.5">Adjust source voltage, resistor ratio, and optional parallel load.</p>
+              </div>
+
+              <!-- Vin -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-mono text-inkMuted">Supply Voltage (V<sub>in</sub>)</label>
+                  <div class="flex items-center gap-1.5">
+                    <input id="div-vin-num" type="number" step="0.1" min="0.1" max="100" value="12" oninput="syncDividerFromInput('vin')" class="w-24 text-right rounded-lg vb-control px-2.5 py-1 text-sm font-mono text-cyanAccent focus:outline-none focus:border-sky-400" />
+                    <span class="text-xs font-mono text-inkMuted w-5">V</span>
+                  </div>
+                </div>
+                <input id="div-vin-slider" type="range" min="1" max="48" step="0.1" value="12" oninput="syncDividerFromSlider('vin')" class="vb-slider" />
+              </div>
+
+              <!-- R1 -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-mono text-inkMuted">Top Resistor (R<sub>1</sub>)</label>
+                  <div class="flex items-center gap-1.5">
+                    <input id="div-r1-num" type="number" step="any" min="0.1" value="10" oninput="syncDividerFromInput('r1')" class="w-24 text-right rounded-lg vb-control px-2.5 py-1 text-sm font-mono text-white focus:outline-none focus:border-sky-400" />
+                    <select id="div-r1-unit" onchange="updateDivider()" class="rounded-lg vb-control px-2 py-1 text-xs font-mono text-cyanAccent focus:outline-none">
+                      <option value="1">Ω</option>
+                      <option value="1000" selected>kΩ</option>
+                      <option value="1000000">MΩ</option>
+                    </select>
+                  </div>
+                </div>
+                <input id="div-r1-slider" type="range" min="1" max="100" step="0.5" value="10" oninput="syncDividerFromSlider('r1')" class="vb-slider" />
+              </div>
+
+              <!-- R2 -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-mono text-inkMuted">Bottom Resistor (R<sub>2</sub>)</label>
+                  <div class="flex items-center gap-1.5">
+                    <input id="div-r2-num" type="number" step="any" min="0.1" value="10" oninput="syncDividerFromInput('r2')" class="w-24 text-right rounded-lg vb-control px-2.5 py-1 text-sm font-mono text-white focus:outline-none focus:border-sky-400" />
+                    <select id="div-r2-unit" onchange="updateDivider()" class="rounded-lg vb-control px-2 py-1 text-xs font-mono text-cyanAccent focus:outline-none">
+                      <option value="1">Ω</option>
+                      <option value="1000" selected>kΩ</option>
+                      <option value="1000000">MΩ</option>
+                    </select>
+                  </div>
+                </div>
+                <input id="div-r2-slider" type="range" min="1" max="100" step="0.5" value="10" oninput="syncDividerFromSlider('r2')" class="vb-slider" />
+              </div>
+
+              <!-- Optional Load Resistor Toggle -->
+              <div class="pt-3 border-t border-white/[0.08] space-y-3">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-sm font-medium text-white">Include Load Resistance (R<sub>L</sub>)</div>
+                    <div class="text-xs text-inkMuted">Models output droop under load in parallel with R<sub>2</sub></div>
+                  </div>
+                  <button id="div-rl-toggle" type="button" role="switch" aria-checked="false" onclick="toggleDividerLoad()" class="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-700 transition-colors">
+                    <span id="div-rl-knob" class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
+                  </button>
+                </div>
+
+                <div id="div-rl-controls" class="hidden space-y-2 pt-1">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-mono text-emeraldAccent">Load Resistor (R<sub>L</sub>)</label>
+                    <div class="flex items-center gap-1.5">
+                      <input id="div-rl-num" type="number" step="any" min="0.1" value="10" oninput="syncDividerFromInput('rl')" class="w-24 text-right rounded-lg vb-control px-2.5 py-1 text-sm font-mono text-emeraldAccent focus:outline-none focus:border-emerald-400" />
+                      <select id="div-rl-unit" onchange="updateDivider()" class="rounded-lg vb-control px-2 py-1 text-xs font-mono text-emeraldAccent focus:outline-none">
+                        <option value="1">Ω</option>
+                        <option value="1000" selected>kΩ</option>
+                        <option value="1000000">MΩ</option>
+                      </select>
+                    </div>
+                  </div>
+                  <input id="div-rl-slider" type="range" min="1" max="100" step="0.5" value="10" oninput="syncDividerFromSlider('rl')" class="vb-slider" />
+                </div>
+              </div>
+
+              <!-- Telemetry Summary Cards -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+                <div class="rounded-xl bg-[#0b101d] border border-sky-400/20 p-3">
+                  <div class="text-[10px] font-mono text-inkMuted">V<sub>out</sub></div>
+                  <div id="div-out-vout" class="text-base font-bold font-mono text-cyanAccent mt-0.5">6.00 V</div>
+                </div>
+                <div class="rounded-xl bg-[#0b101d] border border-white/[0.06] p-3">
+                  <div class="text-[10px] font-mono text-inkMuted">I<sub>total</sub></div>
+                  <div id="div-out-curr" class="text-base font-bold font-mono text-white mt-0.5">600 µA</div>
+                </div>
+                <div class="rounded-xl bg-[#0b101d] border border-white/[0.06] p-3">
+                  <div class="text-[10px] font-mono text-inkMuted">P(R<sub>1</sub>)</div>
+                  <div id="div-out-pr1" class="text-base font-bold font-mono text-amberAccent mt-0.5">3.60 mW</div>
+                </div>
+                <div class="rounded-xl bg-[#0b101d] border border-white/[0.06] p-3">
+                  <div class="text-[10px] font-mono text-inkMuted">P(R<sub>2</sub>)</div>
+                  <div id="div-out-pr2" class="text-base font-bold font-mono text-amberAccent mt-0.5">3.60 mW</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Annotated SVG Schematic -->
+            <div class="lg:col-span-6 vb-card rounded-2xl p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-mono uppercase tracking-wider text-inkMuted">Live Circuit Schematic</span>
+                <span id="div-ratio-badge" class="text-xs font-mono px-2.5 py-1 rounded-full bg-sky-500/10 text-cyanAccent border border-sky-400/20">Ratio: 0.500 (-6.0 dB)</span>
+              </div>
+
+              <div class="flex-1 rounded-2xl bg-[#0b101d] border border-white/[0.06] p-4 flex items-center justify-center">
+                <svg viewBox="0 0 420 340" class="w-full max-w-md h-auto font-mono" role="img" aria-label="Voltage Divider Schematic">
+                  <!-- Vin Terminal -->
+                  <circle cx="140" cy="36" r="6" fill="#090d16" stroke="#38bdf8" stroke-width="2.5" />
+                  <text id="sch-vin" x="158" y="40" fill="#38bdf8" font-size="13" font-weight="600">Vin = 12.0 V</text>
+
+                  <!-- Top Wire to R1 -->
+                  <line x1="140" y1="42" x2="140" y2="75" stroke="#94a3b8" stroke-width="2.2" />
+                  <!-- Current Arrow -->
+                  <polygon points="140,66 135,56 145,56" fill="#38bdf8" />
+                  <text id="sch-itot" x="126" y="64" fill="#94a3b8" font-size="11" text-anchor="end">600 µA</text>
+
+                  <!-- Resistor R1 (Zigzag) -->
+                  <path d="M 140,75 L 140,83 L 128,89 L 152,101 L 128,113 L 152,125 L 128,137 L 140,143 L 140,152" fill="none" stroke="#f1f5f9" stroke-width="2.4" stroke-linejoin="round" />
+                  <text id="sch-r1" x="116" y="108" fill="#f1f5f9" font-size="12" font-weight="600" text-anchor="end">R1 = 10 kΩ</text>
+                  <text id="sch-pr1" x="116" y="125" fill="#f59e0b" font-size="10.5" text-anchor="end">3.60 mW</text>
+
+                  <!-- Mid Junction -->
+                  <line x1="140" y1="152" x2="140" y2="188" stroke="#94a3b8" stroke-width="2.2" />
+                  <circle cx="140" cy="170" r="4.5" fill="#38bdf8" />
+
+                  <!-- Vout Tap Wire -->
+                  <line x1="140" y1="170" x2="270" y2="170" stroke="#38bdf8" stroke-width="2.4" />
+                  <circle cx="270" cy="170" r="6" fill="#090d16" stroke="#38bdf8" stroke-width="2.5" />
+                  <text id="sch-vout" x="284" y="174" fill="#38bdf8" font-size="14" font-weight="700">6.00 V</text>
+                  <text x="284" y="190" fill="#94a3b8" font-size="10">Vout</text>
+
+                  <!-- Resistor R2 (Zigzag) -->
+                  <path d="M 140,188 L 140,196 L 128,202 L 152,214 L 128,226 L 152,238 L 128,250 L 140,256 L 140,266" fill="none" stroke="#f1f5f9" stroke-width="2.4" stroke-linejoin="round" />
+                  <text id="sch-r2" x="116" y="222" fill="#f1f5f9" font-size="12" font-weight="600" text-anchor="end">R2 = 10 kΩ</text>
+                  <text id="sch-pr2" x="116" y="239" fill="#f59e0b" font-size="10.5" text-anchor="end">3.60 mW</text>
+
+                  <!-- Optional Load Resistor Branch -->
+                  <g id="sch-load-group" opacity="0" class="transition-opacity duration-200">
+                    <circle cx="230" cy="170" r="4" fill="#10b981" />
+                    <line x1="230" y1="170" x2="230" y2="196" stroke="#10b981" stroke-width="2.2" stroke-dasharray="4 2" />
+                    <path d="M 230,196 L 218,202 L 242,214 L 218,226 L 242,238 L 218,250 L 230,256 L 230,285 L 140,285" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linejoin="round" />
+                    <text id="sch-rl" x="252" y="226" fill="#10b981" font-size="12" font-weight="600">RL = 10 kΩ</text>
+                    <text id="sch-iload" x="252" y="242" fill="#94a3b8" font-size="10.5">IL = 0 mA</text>
+                  </g>
+
+                  <!-- Bottom Wire & GND Symbol -->
+                  <line x1="140" y1="266" x2="140" y2="296" stroke="#94a3b8" stroke-width="2.2" />
+                  <line x1="120" y1="296" x2="160" y2="296" stroke="#94a3b8" stroke-width="2.5" />
+                  <line x1="127" y1="304" x2="153" y2="304" stroke="#94a3b8" stroke-width="2.2" />
+                  <line x1="134" y1="312" x2="146" y2="312" stroke="#94a3b8" stroke-width="2" />
+                  <text x="140" y="328" fill="#64748b" font-size="10.5" text-anchor="middle">GND (0 V)</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-TAB C: LED SERIES RESISTOR CALCULATOR -->
+        <div id="calc-panel-led" class="calc-panel hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Controls -->
+            <div class="lg:col-span-6 vb-card rounded-2xl p-6 space-y-5">
+              <div class="border-b border-white/[0.08] pb-3">
+                <h2 class="text-lg font-semibold text-white">LED Series Resistor Calculator</h2>
+                <p class="text-xs text-inkMuted mt-0.5">Select an LED chemistry preset or customize supply &amp; forward ratings.</p>
+              </div>
+
+              <!-- LED Presets -->
+              <div class="space-y-2">
+                <div class="text-xs font-mono uppercase tracking-wider text-inkMuted">LED Presets</div>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <button onclick="applyLedPreset('Red', 2.0, '#ef4444')" class="led-preset-btn flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl vb-control hover:border-red-400/50 text-xs font-medium transition">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span> Red 2.0V
+                  </button>
+                  <button onclick="applyLedPreset('Amber', 2.1, '#f59e0b')" class="led-preset-btn flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl vb-control hover:border-amber-400/50 text-xs font-medium transition">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]"></span> Amber 2.1V
+                  </button>
+                  <button onclick="applyLedPreset('Green', 2.2, '#22c55e')" class="led-preset-btn flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl vb-control hover:border-green-400/50 text-xs font-medium transition">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></span> Green 2.2V
+                  </button>
+                  <button onclick="applyLedPreset('Blue', 3.2, '#3b82f6')" class="led-preset-btn flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl vb-control hover:border-blue-400/50 text-xs font-medium transition">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></span> Blue 3.2V
+                  </button>
+                  <button onclick="applyLedPreset('White', 3.3, '#f8fafc')" class="led-preset-btn flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl vb-control hover:border-white/50 text-xs font-medium transition col-span-2 sm:col-span-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-100 shadow-[0_0_8px_#ffffff]"></span> White 3.3V
+                  </button>
+                </div>
+              </div>
+
+              <!-- Inputs -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                <div class="space-y-1.5">
+                  <label for="led-vs" class="block text-xs font-mono text-inkMuted">Supply V<sub>s</sub> (V)</label>
+                  <input id="led-vs" type="number" step="0.1" min="0.5" value="5.0" oninput="updateLedCalc()" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-base font-mono text-cyanAccent focus:outline-none focus:border-sky-400" />
+                </div>
+                <div class="space-y-1.5">
+                  <label for="led-vf" class="block text-xs font-mono text-inkMuted">LED V<sub>f</sub> (V)</label>
+                  <input id="led-vf" type="number" step="0.1" min="0.1" value="2.0" oninput="updateLedCalc()" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-base font-mono text-white focus:outline-none focus:border-sky-400" />
+                </div>
+                <div class="space-y-1.5">
+                  <label for="led-if" class="block text-xs font-mono text-inkMuted">Current I<sub>f</sub> (mA)</label>
+                  <input id="led-if" type="number" step="1" min="0.5" value="20" oninput="updateLedCalc()" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-base font-mono text-white focus:outline-none focus:border-sky-400" />
+                </div>
+              </div>
+
+              <!-- Quick Supply Chips -->
+              <div class="flex flex-wrap items-center gap-2 text-xs font-mono">
+                <span class="text-slate-500">Quick V<sub>s</sub>:</span>
+                <button onclick="setLedSupply(3.3)" class="px-2.5 py-1 rounded-lg vb-control hover:text-cyanAccent transition">3.3V</button>
+                <button onclick="setLedSupply(5)" class="px-2.5 py-1 rounded-lg vb-control hover:text-cyanAccent transition">5V</button>
+                <button onclick="setLedSupply(9)" class="px-2.5 py-1 rounded-lg vb-control hover:text-cyanAccent transition">9V</button>
+                <button onclick="setLedSupply(12)" class="px-2.5 py-1 rounded-lg vb-control hover:text-cyanAccent transition">12V</button>
+                <button onclick="setLedSupply(24)" class="px-2.5 py-1 rounded-lg vb-control hover:text-cyanAccent transition">24V</button>
+              </div>
+
+              <!-- Warning Container -->
+              <div id="led-warning" class="hidden text-xs font-mono px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-300"></div>
+            </div>
+
+            <!-- LED Results & Live Circuit -->
+            <div class="lg:col-span-6 vb-card rounded-2xl p-6 flex flex-col justify-between gap-5">
+              <div class="grid grid-cols-2 gap-3.5">
+                <div class="rounded-xl bg-[#0b101d] border border-white/[0.06] p-4">
+                  <div class="text-xs font-mono text-inkMuted">Exact Required R</div>
+                  <div id="led-out-exact" class="text-2xl font-bold font-mono text-white mt-1">150 Ω</div>
+                </div>
+                <div class="rounded-xl bg-emerald-500/[0.08] border border-emerald-400/25 p-4">
+                  <div class="text-xs font-mono text-emerald-300/80">Recommended E24</div>
+                  <div id="led-out-e24" class="text-2xl font-bold font-mono text-emeraldAccent mt-1">150 Ω</div>
+                </div>
+                <div class="rounded-xl bg-[#0b101d] border border-white/[0.06] p-4">
+                  <div class="text-xs font-mono text-inkMuted">Actual LED Current</div>
+                  <div id="led-out-actual-i" class="text-xl font-bold font-mono text-cyanAccent mt-1">20.0 mA</div>
+                </div>
+                <div class="rounded-xl bg-[#0b101d] border border-white/[0.06] p-4">
+                  <div class="text-xs font-mono text-inkMuted">Resistor Power (P<sub>R</sub>)</div>
+                  <div id="led-out-power" class="text-xl font-bold font-mono text-amberAccent mt-1">60.0 mW</div>
+                  <div id="led-out-watt" class="text-[11px] font-mono text-inkMuted mt-0.5">Use 1/4 W rating</div>
+                </div>
+              </div>
+
+              <!-- Mini LED Circuit SVG -->
+              <div class="rounded-2xl bg-[#0b101d] border border-white/[0.06] p-4 flex items-center justify-center">
+                <svg viewBox="0 0 420 120" class="w-full max-w-md h-auto font-mono" role="img" aria-label="LED Series Resistor Circuit">
+                  <defs>
+                    <filter id="ledGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="5" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <!-- Vs Node -->
+                  <circle cx="42" cy="60" r="6" fill="#090d16" stroke="#38bdf8" stroke-width="2.5" />
+                  <text id="led-svg-vs" x="42" y="38" fill="#38bdf8" font-size="12" text-anchor="middle" font-weight="600">5.0 V</text>
+
+                  <!-- Wire to R -->
+                  <line x1="48" y1="60" x2="96" y2="60" stroke="#94a3b8" stroke-width="2.2" />
+
+                  <!-- Series Resistor -->
+                  <path d="M 96,60 L 106,60 L 112,48 L 124,72 L 136,48 L 148,72 L 160,48 L 166,60 L 176,60" fill="none" stroke="#f1f5f9" stroke-width="2.4" stroke-linejoin="round" />
+                  <text id="led-svg-r" x="136" y="34" fill="#10b981" font-size="12" text-anchor="middle" font-weight="600">150 Ω</text>
+
+                  <!-- Wire to LED -->
+                  <line x1="176" y1="60" x2="245" y2="60" stroke="#94a3b8" stroke-width="2.2" />
+
+                  <!-- Glowing LED Symbol -->
+                  <g id="led-svg-diode" filter="url(#ledGlow)">
+                    <polygon id="led-svg-tri" points="245,44 245,76 277,60" fill="#ef4444" stroke="#ef4444" stroke-width="2" />
+                    <line id="led-svg-bar" x1="277" y1="43" x2="277" y2="77" stroke="#ef4444" stroke-width="3" />
+                    <!-- Emission Rays -->
+                    <path id="led-svg-rays" d="M 264,34 L 276,22 M 276,22 L 270,22 M 276,22 L 276,28 M 278,38 L 290,26 M 290,26 L 284,26 M 290,26 L 290,32" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" />
+                  </g>
+                  <text id="led-svg-vf" x="262" y="98" fill="#94a3b8" font-size="11" text-anchor="middle">Vf = 2.0V</text>
+
+                  <!-- Wire to GND -->
+                  <line x1="277" y1="60" x2="365" y2="60" stroke="#94a3b8" stroke-width="2.2" />
+                  <line x1="365" y1="60" x2="365" y2="82" stroke="#94a3b8" stroke-width="2.2" />
+                  <line x1="349" y1="82" x2="381" y2="82" stroke="#94a3b8" stroke-width="2.5" />
+                  <line x1="355" y1="89" x2="375" y2="89" stroke="#94a3b8" stroke-width="2.2" />
+                  <line x1="361" y1="96" x2="369" y2="96" stroke="#94a3b8" stroke-width="2" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           PAGE 4: RC SIGNAL & FILTER VISUALIZER
+           ===================================================================== -->
+      <section id="page-rc-filter" class="page-view hidden space-y-6">
+        <!-- Header & Domain Mode Switcher -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">RC Signal &amp; Filter Visualizer</h1>
+            <p class="text-sm text-inkMuted mt-0.5">Real-time time-domain step response and logarithmic frequency-domain Bode plotter.</p>
+          </div>
+          <div class="inline-flex p-1 rounded-xl vb-control self-start">
+            <button id="rc-mode-step" onclick="setRcMode('step')" class="px-4 py-2 rounded-lg text-xs font-semibold transition">Step Response (Time)</button>
+            <button id="rc-mode-bode" onclick="setRcMode('bode')" class="px-4 py-2 rounded-lg text-xs font-semibold transition">Bode Plot (Freq)</button>
+          </div>
+        </div>
+
+        <!-- Telemetry Readout Strip -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div class="vb-card rounded-2xl p-4">
+            <div class="text-[11px] font-mono uppercase text-inkMuted">Time Constant (τ = RC)</div>
+            <div id="rc-out-tau" class="text-xl sm:text-2xl font-bold font-mono text-cyanAccent mt-1">1.00 ms</div>
+          </div>
+          <div class="vb-card rounded-2xl p-4">
+            <div class="text-[11px] font-mono uppercase text-inkMuted">Settling Time (5τ · 99.3%)</div>
+            <div id="rc-out-5tau" class="text-xl sm:text-2xl font-bold font-mono text-white mt-1">5.00 ms</div>
+          </div>
+          <div class="vb-card rounded-2xl p-4">
+            <div class="text-[11px] font-mono uppercase text-inkMuted">Cutoff Freq (f<sub>c</sub> · -3dB)</div>
+            <div id="rc-out-fc" class="text-xl sm:text-2xl font-bold font-mono text-amberAccent mt-1">159.2 Hz</div>
+          </div>
+          <div class="vb-card rounded-2xl p-4">
+            <div class="text-[11px] font-mono uppercase text-inkMuted">Impedance at f<sub>c</sub></div>
+            <div id="rc-out-xc" class="text-xl sm:text-2xl font-bold font-mono text-emeraldAccent mt-1">10.0 kΩ</div>
+          </div>
+        </div>
+
+        <!-- Canvas Plotter + Controls -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Canvas Area -->
+          <div class="lg:col-span-8 vb-card rounded-2xl p-4 sm:p-5 flex flex-col gap-3">
+            <!-- Plot Toolbar -->
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div id="rc-step-legend" class="flex flex-wrap items-center gap-4 text-xs font-mono">
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input id="rc-show-charge" type="checkbox" checked onchange="scheduleRcDraw()" class="accent-sky-400 rounded" />
+                  <span class="w-3 h-0.5 bg-sky-400 inline-block"></span>
+                  <span class="text-inkPrimary">Charging V<sub>c</sub>(t)</span>
+                </label>
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input id="rc-show-discharge" type="checkbox" checked onchange="scheduleRcDraw()" class="accent-emerald-400 rounded" />
+                  <span class="w-3 h-0.5 border-t-2 border-dashed border-emerald-400 inline-block"></span>
+                  <span class="text-inkPrimary">Discharging</span>
+                </label>
+              </div>
+
+              <div id="rc-bode-controls" class="hidden flex items-center gap-2">
+                <span class="text-xs font-mono text-inkMuted">Topology:</span>
+                <div class="inline-flex p-0.5 rounded-lg vb-control">
+                  <button id="rc-filter-lp" onclick="setFilterType('lowpass')" class="px-3 py-1 rounded-md text-xs font-mono transition">Low-Pass</button>
+                  <button id="rc-filter-hp" onclick="setFilterType('highpass')" class="px-3 py-1 rounded-md text-xs font-mono transition">High-Pass</button>
+                </div>
+              </div>
+
+              <div id="rc-cursor-readout" class="text-[11px] font-mono text-inkMuted bg-[#0b101d] border border-white/[0.06] px-2.5 py-1 rounded-lg">
+                Hover plot to inspect
+              </div>
+            </div>
+
+            <!-- Responsive HiDPI Canvas Container -->
+            <div id="rc-canvas-wrap" class="relative w-full h-[320px] sm:h-[380px] rounded-xl bg-[#070b14] border border-white/[0.08] overflow-hidden cursor-crosshair">
+              <canvas id="rc-canvas" class="block w-full h-full"></canvas>
+            </div>
+          </div>
+
+          <!-- Parameter Controls -->
+          <div class="lg:col-span-4 vb-card rounded-2xl p-5 flex flex-col justify-between gap-5">
+            <div class="space-y-5">
+              <div class="border-b border-white/[0.08] pb-3">
+                <h2 class="text-base font-semibold text-white">Component Values</h2>
+                <p class="text-xs text-inkMuted mt-0.5">Drag sliders for smooth 60fps real-time plotting.</p>
+              </div>
+
+              <!-- Supply Voltage Vs -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-mono text-inkMuted">Step Voltage (V<sub>s</sub>)</label>
+                  <div class="flex items-center gap-1.5">
+                    <input id="rc-v-num" type="number" step="0.1" min="0.5" max="100" value="5" oninput="syncRcFromInput('v')" class="w-20 text-right rounded-lg vb-control px-2.5 py-1 text-sm font-mono text-cyanAccent focus:outline-none focus:border-sky-400" />
+                    <span class="text-xs font-mono text-inkMuted w-7">V</span>
+                  </div>
+                </div>
+                <input id="rc-v-slider" type="range" min="1" max="24" step="0.1" value="5" oninput="syncRcFromSlider('v')" class="vb-slider" />
+              </div>
+
+              <!-- Resistance R -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-mono text-inkMuted">Resistance (R)</label>
+                  <div class="flex items-center gap-1.5">
+                    <input id="rc-r-num" type="number" step="any" min="0.1" value="10" oninput="syncRcFromInput('r')" class="w-20 text-right rounded-lg vb-control px-2.5 py-1 text-sm font-mono text-white focus:outline-none focus:border-sky-400" />
+                    <select id="rc-r-unit" onchange="syncRcFromInput('r')" class="rounded-lg vb-control px-2 py-1 text-xs font-mono text-cyanAccent focus:outline-none">
+                      <option value="1">Ω</option>
+                      <option value="1000" selected>kΩ</option>
+                      <option value="1000000">MΩ</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- Log slider from 10Ω (1) to 10MΩ (7) -->
+                <input id="rc-r-slider" type="range" min="1" max="7" step="0.01" value="4" oninput="syncRcFromSlider('r')" class="vb-slider" />
+                <div class="flex justify-between text-[10px] font-mono text-slate-500">
+                  <span>10 Ω</span><span>10 kΩ</span><span>10 MΩ</span>
+                </div>
+              </div>
+
+              <!-- Capacitance C -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-mono text-inkMuted">Capacitance (C)</label>
+                  <div class="flex items-center gap-1.5">
+                    <input id="rc-c-num" type="number" step="any" min="0.1" value="100" oninput="syncRcFromInput('c')" class="w-20 text-right rounded-lg vb-control px-2.5 py-1 text-sm font-mono text-white focus:outline-none focus:border-sky-400" />
+                    <select id="rc-c-unit" onchange="syncRcFromInput('c')" class="rounded-lg vb-control px-2 py-1 text-xs font-mono text-cyanAccent focus:outline-none">
+                      <option value="1e-12">pF</option>
+                      <option value="1e-9" selected>nF</option>
+                      <option value="1e-6">µF</option>
+                      <option value="1e-3">mF</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- Log slider from 10pF (-11) to 10mF (-2) -->
+                <input id="rc-c-slider" type="range" min="-11" max="-2" step="0.01" value="-7" oninput="syncRcFromSlider('c')" class="vb-slider" />
+                <div class="flex justify-between text-[10px] font-mono text-slate-500">
+                  <span>10 pF</span><span>1 µF</span><span>10 mF</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Engineering Presets -->
+            <div class="pt-4 border-t border-white/[0.08] space-y-2">
+              <div class="text-[11px] font-mono uppercase tracking-wider text-inkMuted">Quick Presets</div>
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="applyRcPreset(5, 10e3, 100e-9)" class="px-2.5 py-2 rounded-xl vb-control hover:border-sky-400/40 text-xs font-mono text-left transition">
+                  <div class="text-white">Audio 159 Hz</div>
+                  <div class="text-[10px] text-inkMuted">10kΩ · 100nF</div>
+                </button>
+                <button onclick="applyRcPreset(5, 1e3, 10e-9)" class="px-2.5 py-2 rounded-xl vb-control hover:border-sky-400/40 text-xs font-mono text-left transition">
+                  <div class="text-white">RF 15.9 kHz</div>
+                  <div class="text-[10px] text-inkMuted">1kΩ · 10nF</div>
+                </button>
+                <button onclick="applyRcPreset(12, 47e3, 10e-6)" class="px-2.5 py-2 rounded-xl vb-control hover:border-sky-400/40 text-xs font-mono text-left transition">
+                  <div class="text-white">Debounce 470ms</div>
+                  <div class="text-[10px] text-inkMuted">47kΩ · 10µF</div>
+                </button>
+                <button onclick="applyRcPreset(3.3, 100e3, 1e-6)" class="px-2.5 py-2 rounded-xl vb-control hover:border-sky-400/40 text-xs font-mono text-left transition">
+                  <div class="text-white">Reset 100ms</div>
+                  <div class="text-[10px] text-inkMuted">100kΩ · 1µF</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           PAGE 5: DIGITAL & LOGIC LAB
+           ===================================================================== -->
+      <section id="page-digital" class="page-view hidden space-y-6">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-white">Digital &amp; Logic Lab</h1>
+          <p class="text-sm text-inkMuted mt-0.5">Interactive 8-bit register &amp; base converter paired with a live logic gate playground.</p>
+        </div>
+
+        <!-- SECTION A: 8-BIT BINARY & BASE CONVERTER -->
+        <div class="vb-card rounded-2xl p-6 space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
+            <div>
+              <h2 class="text-lg font-semibold text-white">8-Bit Binary Register &amp; Base Converter</h2>
+              <p class="text-xs text-inkMuted mt-0.5">Click individual bits or edit any base field to synchronize in real time.</p>
+            </div>
+            <!-- Bitwise Actions -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="bitwiseOp('shl')" class="px-3 py-1.5 rounded-xl vb-control hover:border-sky-400/40 hover:text-cyanAccent text-xs font-mono transition" title="Shift Left">&lt;&lt; Shift L</button>
+              <button onclick="bitwiseOp('shr')" class="px-3 py-1.5 rounded-xl vb-control hover:border-sky-400/40 hover:text-cyanAccent text-xs font-mono transition" title="Shift Right">&gt;&gt; Shift R</button>
+              <button onclick="bitwiseOp('not')" class="px-3 py-1.5 rounded-xl vb-control hover:border-amber-400/40 hover:text-amberAccent text-xs font-mono transition" title="Bitwise Invert">~ Invert</button>
+              <button onclick="bitwiseOp('clear')" class="px-3 py-1.5 rounded-xl vb-control hover:border-rose-400/40 hover:text-rose-400 text-xs font-mono transition">Clear</button>
+            </div>
+          </div>
+
+          <!-- 8 Interactive Bit Switches -->
+          <div id="bit-switches-grid" class="grid grid-cols-4 sm:grid-cols-8 gap-2.5">
+            <!-- Generated by JS (Bit 7 down to Bit 0) -->
+          </div>
+
+          <!-- Synchronized Base Inputs -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label for="base-dec" class="text-xs font-mono uppercase text-inkMuted">Decimal (Base 10)</label>
+                <span id="base-signed" class="text-[10px] font-mono text-slate-500">int8: 42</span>
+              </div>
+              <input id="base-dec" type="text" inputmode="numeric" value="42" oninput="onBaseInput('dec', this.value)" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-lg font-mono text-cyanAccent focus:outline-none focus:border-sky-400" />
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label for="base-hex" class="text-xs font-mono uppercase text-inkMuted">Hexadecimal (Base 16)</label>
+                <span id="base-ascii" class="text-[10px] font-mono text-slate-500">ASCII: '*'</span>
+              </div>
+              <div class="relative">
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono text-sm text-slate-500">0x</span>
+                <input id="base-hex" type="text" value="2A" oninput="onBaseInput('hex', this.value)" class="w-full rounded-xl vb-control pl-9 pr-3.5 py-2.5 text-lg font-mono uppercase text-emeraldAccent focus:outline-none focus:border-emerald-400" />
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="base-bin" class="block text-xs font-mono uppercase text-inkMuted">Binary (Base 2)</label>
+              <input id="base-bin" type="text" value="00101010" oninput="onBaseInput('bin', this.value)" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-lg font-mono text-white tracking-wider focus:outline-none focus:border-sky-400" />
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="base-oct" class="block text-xs font-mono uppercase text-inkMuted">Octal (Base 8)</label>
+              <input id="base-oct" type="text" value="052" oninput="onBaseInput('oct', this.value)" class="w-full rounded-xl vb-control px-3.5 py-2.5 text-lg font-mono text-amberAccent focus:outline-none focus:border-amber-400" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION B: INTERACTIVE LOGIC GATE PLAYGROUND -->
+        <div class="vb-card rounded-2xl p-6 space-y-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+            <div>
+              <h2 class="text-lg font-semibold text-white">Interactive Logic Gate Playground</h2>
+              <p class="text-xs text-inkMuted mt-0.5">Toggle inputs or click truth-table rows to test gate propagation live.</p>
+            </div>
+            <!-- Gate Selector Pills -->
+            <div id="gate-selector" class="flex flex-wrap gap-1.5">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <!-- Left: Interactive Toggle Switches + SVG Gate Schematic -->
+            <div class="lg:col-span-7 rounded-2xl bg-[#0b101d] border border-white/[0.06] p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <span id="gate-title" class="text-sm font-semibold text-white">AND Gate</span>
+                <span id="gate-expr" class="text-xs font-mono px-2.5 py-1 rounded-lg bg-sky-500/10 text-cyanAccent border border-sky-400/20">Q = A · B</span>
+              </div>
+
+              <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <!-- Input A & B Switches -->
+                <div class="flex sm:flex-col gap-3 w-full sm:w-auto justify-center">
+                  <button id="logic-btn-a" onclick="toggleLogicInput('A')" class="flex items-center justify-between gap-4 px-4 py-3 rounded-xl border transition min-w-[125px]">
+                    <span class="font-mono text-xs text-inkMuted">INPUT A</span>
+                    <span id="logic-val-a" class="font-mono text-lg font-bold">0</span>
+                  </button>
+                  <button id="logic-btn-b" onclick="toggleLogicInput('B')" class="flex items-center justify-between gap-4 px-4 py-3 rounded-xl border transition min-w-[125px]">
+                    <span class="font-mono text-xs text-inkMuted">INPUT B</span>
+                    <span id="logic-val-b" class="font-mono text-lg font-bold">0</span>
+                  </button>
+                </div>
+
+                <!-- Live SVG Gate Schematic -->
+                <div class="flex-1 flex justify-center w-full">
+                  <svg id="logic-gate-svg" viewBox="0 0 320 160" class="w-full max-w-[320px] h-auto font-mono" role="img" aria-label="Interactive Logic Gate Schematic">
+                    <!-- Dynamic content rendered via JS -->
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Interactive Truth Table -->
+            <div class="lg:col-span-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono uppercase tracking-wider text-inkMuted">Truth Table</span>
+                <span class="text-[11px] text-slate-500">Click row to apply inputs</span>
+              </div>
+              <div class="rounded-2xl overflow-hidden border border-white/[0.08] bg-[#0b101d]">
+                <table class="w-full text-center font-mono text-sm">
+                  <thead>
+                    <tr class="bg-white/[0.04] text-inkMuted text-xs border-b border-white/[0.08]">
+                      <th class="py-2.5 px-4">Input A</th>
+                      <th class="py-2.5 px-4">Input B</th>
+                      <th class="py-2.5 px-4 text-cyanAccent">Output Q</th>
+                    </tr>
+                  </thead>
+                  <tbody id="truth-table-body" class="divide-y divide-white/[0.06]">
+                    <!-- Populated via JS -->
+                  </tbody>
+                </table>
+              </div>
+              <p id="gate-desc" class="text-xs text-inkMuted leading-relaxed px-1"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       TOAST NOTIFICATION CONTAINER (No native alerts)
+       ========================================================================= -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- =========================================================================
+       APPLICATION JAVASCRIPT
+       ========================================================================= -->
+  <script>
+    'use strict';
+
+    /* =========================================================================
+       1. SHARED UTILITIES: SI FORMATTING, E24 VALUES, CLIPBOARD, TOASTS
+       ========================================================================= */
+
+    // Standard E24 5% resistor decade values
+    const E24_SERIES = [
+      1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2.0,
+      2.2, 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.3,
+      4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1
+    ];
+
+    /**
+     * Formats a numeric value using clean engineering SI prefixes.
+     * @param {number} val - Raw value in base SI unit
+     * @param {string} unit - Unit symbol (e.g., 'Ω', 'Hz', 's', 'W', 'A')
+     * @param {number} sig - Decimal precision
+     */
+    function formatSI(val, unit = '', sig = 2) {
+      if (!isFinite(val) || isNaN(val)) return `— ${unit}`.trim();
+      const abs = Math.abs(val);
+      if (abs === 0) return `0 ${unit}`.trim();
+
+      const prefixes = [
+        { exp: 1e9,  sym: 'G' },
+        { exp: 1e6,  sym: 'M' },
+        { exp: 1e3,  sym: 'k' },
+        { exp: 1,    sym: ''  },
+        { exp: 1e-3, sym: 'm' },
+        { exp: 1e-6, sym: 'µ' },
+        { exp: 1e-9, sym: 'n' },
+        { exp: 1e-12, sym: 'p' }
+      ];
+
+      for (const p of prefixes) {
+        if (abs >= p.exp * 0.999999) {
+          const scaled = val / p.exp;
+          // Clean trailing zeros while preserving neat precision
+          const fixed = scaled >= 100 ? scaled.toFixed(Math.max(0, sig - 1))
+                      : scaled >= 10  ? scaled.toFixed(sig)
+                      : scaled.toFixed(sig);
+          const clean = parseFloat(fixed).toString();
+          return `${clean} ${p.sym}${unit}`.trim();
+        }
+      }
+      return `${val.toExponential(2)} ${unit}`.trim();
+    }
+
+    /**
+     * Finds the nearest (or next higher) standard E24 resistor value.
+     * @param {number} ohms - Target resistance in Ohms
+     * @param {'nearest'|'ceil'} mode - 'nearest' by log ratio or 'ceil' (safe upper)
+     */
+    function findStandardE24(ohms, mode = 'nearest') {
+      if (!isFinite(ohms) || ohms <= 0) return 1;
+      const exp = Math.floor(Math.log10(ohms));
+      const candidates = [];
+      for (let d = exp - 1; d <= exp + 1; d++) {
+        const mult = Math.pow(10, d);
+        for (const base of E24_SERIES) {
+          candidates.push(Number((base * mult).toPrecision(3)));
+        }
+      }
+
+      if (mode === 'ceil') {
+        const above = candidates.find(v => v >= ohms * 0.999);
+        return above || candidates[candidates.length - 1];
+      }
+
+      let best = candidates[0];
+      let bestErr = Infinity;
+      for (const c of candidates) {
+        const err = Math.abs(Math.log(c / ohms));
+        if (err < bestErr) {
+          bestErr = err;
+          best = c;
+        }
+      }
+      return best;
+    }
+
+    /**
+     * Recommends a standard resistor power rating using a 2x thermal derating factor.
+     */
+    function getRecommendedWattage(watts) {
+      const safeReq = watts * 2;
+      const ratings = [
+        { max: 0.125, label: '1/8 W (0.125 W)', cap: 0.125 },
+        { max: 0.25,  label: '1/4 W (0.25 W)',  cap: 0.25 },
+        { max: 0.5,   label: '1/2 W (0.5 W)',   cap: 0.5 },
+        { max: 1.0,   label: '1 W',             cap: 1.0 },
+        { max: 2.0,   label: '2 W',             cap: 2.0 },
+        { max: 5.0,   label: '5 W Power',       cap: 5.0 },
+        { max: 10.0,  label: '10 W Wirewound',  cap: 10.0 }
+      ];
+      for (const r of ratings) {
+        if (safeReq <= r.max) return r;
+      }
+      return { max: Infinity, label: '25 W+ Heatsink', cap: Math.max(25, safeReq) };
+    }
+
+    /**
+     * Safe iframe-compatible copy-to-clipboard using execCommand fallback.
+     */
+    function copyTextToClipboard(text, label = 'Copied to clipboard') {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) {
+          showToast(label, 'success');
+        } else {
+          showToast('Copy not permitted in this browser', 'warn');
+        }
+      } catch (err) {
+        showToast('Unable to copy text', 'warn');
+      }
+    }
+
+    /**
+     * Displays a sleek non-blocking toast notification.
+     */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const styles = {
+        success: 'bg-[#111827] border-emerald-400/40 text-emerald-300',
+        info:    'bg-[#111827] border-sky-400/40 text-sky-300',
+        warn:    'bg-[#111827] border-amber-400/40 text-amber-300'
+      };
+      const dotColors = {
+        success: 'bg-emerald-400',
+        info:    'bg-sky-400',
+        warn:    'bg-amber-400'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl border shadow-xl text-xs font-mono transition-all duration-200 transform translate-y-2 opacity-0 ${styles[type] || styles.info}`;
+      toast.innerHTML = `<span class="w-2 h-2 rounded-full ${dotColors[type] || dotColors.info}"></span><span>${message}</span>`;
+
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 220);
+      }, 2400);
+    }
+
+    /* =========================================================================
+       2. MULTI-PAGE NAVIGATION & MOBILE SIDEBAR
+       ========================================================================= */
+    const PAGE_LABELS = {
+      'dashboard':   'Dashboard',
+      'resistor':    'Resistor Lab',
+      'calculators': 'Calculators',
+      'rc-filter':   'RC Plotter',
+      'digital':     'Digital Lab'
+    };
+
+    let currentPage = 'dashboard';
+
+    function navigateTo(pageId) {
+      if (!PAGE_LABELS[pageId]) pageId = 'dashboard';
+      currentPage = pageId;
+
+      // Toggle visible section
+      document.querySelectorAll('.page-view').forEach(sec => {
+        sec.classList.toggle('hidden', sec.id !== `page-${pageId}`);
+      });
+
+      // Update sidebar active pill highlights
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        const active = btn.dataset.nav === pageId;
+        btn.className = active
+          ? 'nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-left bg-sky-400/10 text-cyanAccent border border-sky-400/25 shadow-[inset_3px_0_0_#38bdf8]'
+          : 'nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-left text-inkMuted hover:text-white hover:bg-white/[0.04] border border-transparent';
+      });
+
+      // Update mobile header badge
+      const badge = document.getElementById('mobile-page-badge');
+      if (badge) badge.textContent = PAGE_LABELS[pageId];
+
+      // Close mobile drawer if open
+      closeMobileSidebar();
+
+      // Trigger canvas resize/redraw when entering RC Visualizer
+      if (pageId === 'rc-filter') {
+        requestAnimationFrame(() => {
+          resizeRcCanvas();
+          drawRcPlot();
+        });
+      }
+
+      // Scroll smoothly to top of viewport
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function openMobileSidebar() {
+      document.getElementById('sidebar').classList.remove('-translate-x-full');
+      document.getElementById('sidebar-backdrop').classList.remove('hidden');
+    }
+
+    function closeMobileSidebar() {
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('sidebar-backdrop').classList.add('hidden');
+    }
+
+    function resetCurrentModule() {
+      if (currentPage === 'dashboard') {
+        showToast('Dashboard formulas & scratchpad intact', 'info');
+      } else if (currentPage === 'resistor') {
+        resistorState.mode = 4;
+        resistorState.bands = [4, 7, 0, 2, 10]; // 4.7k ±5%
+        document.getElementById('res-reverse-input').value = '';
+        document.getElementById('res-reverse-feedback').textContent = '';
+        document.getElementById('res-e24-box').classList.add('hidden');
+        setResistorMode(4);
+        showToast('Resistor Lab reset to 4.7 kΩ ±5%', 'info');
+      } else if (currentPage === 'calculators') {
+        clearOhmsLaw();
+        resetDivider();
+        applyLedPreset('Red', 2.0, '#ef4444');
+        setLedSupply(5);
+        document.getElementById('led-if').value = 20;
+        updateLedCalc();
+        showToast('Circuit Calculators reset to defaults', 'info');
+      } else if (currentPage === 'rc-filter') {
+        applyRcPreset(5, 10e3, 100e-9);
+        setRcMode('step');
+        setFilterType('lowpass');
+        showToast('RC Plotter reset to 10kΩ / 100nF', 'info');
+      } else if (currentPage === 'digital') {
+        setDigitalByte(42);
+        selectLogicGate('AND');
+        logicState.a = 0;
+        logicState.b = 0;
+        renderLogicLab();
+        showToast('Digital & Logic Lab reset', 'info');
+      }
+    }
+
+    /* =========================================================================
+       3. PAGE 1: DASHBOARD FORMULAS & PERSISTENT LAB SCRATCHPAD
+       ========================================================================= */
+    const QUICK_FORMULAS = [
+      {
+        title: "Ohm's Law",
+        formula: 'V = I × R',
+        detail: 'Voltage equals Current times Resistance',
+        target: 'calculators',
+        accent: 'text-cyanAccent'
+      },
+      {
+        title: 'Electrical Power',
+        formula: 'P = V × I = I²R = V²/R',
+        detail: 'Power dissipated in Watts (W)',
+        target: 'calculators',
+        accent: 'text-emeraldAccent'
+      },
+      {
+        title: 'RC Time Constant',
+        formula: 'τ = R × C',
+        detail: '63.2% charge at 1τ · 99.3% at 5τ',
+        target: 'rc-filter',
+        accent: 'text-amberAccent'
+      },
+      {
+        title: 'Cutoff Frequency',
+        formula: 'fc = 1 / (2πRC)',
+        detail: '-3 dB attenuation corner frequency',
+        target: 'rc-filter',
+        accent: 'text-amberAccent'
+      },
+      {
+        title: 'Voltage Divider',
+        formula: 'Vout = Vin × R2 / (R1 + R2)',
+        detail: 'Unloaded resistive attenuation ratio',
+        target: 'calculators',
+        accent: 'text-cyanAccent'
+      },
+      {
+        title: 'Series / Parallel R',
+        formula: 'Rs = R1+R2 · Rp = (R1·R2)/(R1+R2)',
+        detail: 'Equivalent resistive networks',
+        target: 'resistor',
+        accent: 'text-purple-400'
+      }
+    ];
+
+    function initDashboard() {
+      const grid = document.getElementById('formula-grid');
+      grid.innerHTML = QUICK_FORMULAS.map(f => `
+        <div onclick="copyTextToClipboard('${f.formula.replace(/'/g, "\\'")}', 'Copied: ${f.title}')"
+             class="vb-card rounded-2xl p-4 cursor-pointer hover:border-sky-400/35 transition group flex flex-col justify-between gap-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-white">${f.title}</span>
+            <span class="text-[10px] font-mono text-slate-500 group-hover:text-cyanAccent transition">COPY</span>
+          </div>
+          <div class="font-mono text-sm sm:text-base font-semibold ${f.accent} bg-[#0b101d] border border-white/[0.06] rounded-xl px-3 py-2">
+            ${f.formula}
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-inkMuted">
+            <span>${f.detail}</span>
+            <button type="button" onclick="event.stopPropagation(); navigateTo('${f.target}')" class="text-cyanAccent hover:underline font-mono ml-2 shrink-0">Try →</button>
+          </div>
+        </div>
+      `).join('');
+
+      // Load saved scratchpad from localStorage safely
+      const ta = document.getElementById('lab-scratchpad');
+      try {
+        const saved = localStorage.getItem('voltbench_scratchpad_v1');
+        if (saved !== null) ta.value = saved;
+      } catch (e) { /* storage unavailable in sandboxed context */ }
+
+      updateScratchpadStats();
+      ta.addEventListener('input', () => {
+        updateScratchpadStats();
+        try {
+          localStorage.setItem('voltbench_scratchpad_v1', ta.value);
+        } catch (e) { /* ignore storage errors */ }
+      });
+    }
+
+    let clearConfirmTimer = null;
+    function updateScratchpadStats() {
+      const val = document.getElementById('lab-scratchpad').value;
+      document.getElementById('scratchpad-chars').textContent = val.length;
+      document.getElementById('scratchpad-lines').textContent = val.length ? val.split('\n').length : 1;
+    }
+
+    function copyScratchpad() {
+      const val = document.getElementById('lab-scratchpad').value;
+      if (!val.trim()) {
+        showToast('Scratchpad is empty', 'warn');
+        return;
+      }
+      copyTextToClipboard(val, 'Lab notes copied');
+    }
+
+    function clearScratchpad() {
+      const ta = document.getElementById('lab-scratchpad');
+      const btn = document.getElementById('scratchpad-clear-btn');
+      if (!ta.value) return;
+
+      // Inline two-tap clear confirmation (no native confirm())
+      if (btn.dataset.armed !== 'true') {
+        btn.dataset.armed = 'true';
+        btn.textContent = 'Confirm Clear?';
+        btn.classList.add('text-rose-400', 'border-rose-400/50');
+        clearConfirmTimer = setTimeout(() => {
+          btn.dataset.armed = 'false';
+          btn.textContent = 'Clear';
+          btn.classList.remove('text-rose-400', 'border-rose-400/50');
+        }, 2800);
+        return;
+      }
+
+      clearTimeout(clearConfirmTimer);
+      btn.dataset.armed = 'false';
+      btn.textContent = 'Clear';
+      btn.classList.remove('text-rose-400', 'border-rose-400/50');
+      ta.value = '';
+      updateScratchpadStats();
+      try { localStorage.removeItem('voltbench_scratchpad_v1'); } catch (e) {}
+      showToast('Lab scratchpad cleared', 'info');
+    }
+
+    /* =========================================================================
+       4. PAGE 2: RESISTOR LAB
+       ========================================================================= */
+    const RESISTOR_COLORS = [
+      { id: 0,  name: 'Black',  hex: '#111827', swatch: '#0f172a', digit: 0,    mult: 1,        multLbl: '×1 Ω',   tol: null,  tolLbl: null },
+      { id: 1,  name: 'Brown',  hex: '#78350f', swatch: '#854d0e', digit: 1,    mult: 10,       multLbl: '×10 Ω',  tol: 1,     tolLbl: '±1%' },
+      { id: 2,  name: 'Red',    hex: '#dc2626', swatch: '#ef4444', digit: 2,    mult: 100,      multLbl: '×100 Ω', tol: 2,     tolLbl: '±2%' },
+      { id: 3,  name: 'Orange', hex: '#ea580c', swatch: '#f97316', digit: 3,    mult: 1e3,      multLbl: '×1 kΩ',  tol: null,  tolLbl: null },
+      { id: 4,  name: 'Yellow', hex: '#eab308', swatch: '#facc15', digit: 4,    mult: 1e4,      multLbl: '×10 kΩ', tol: null,  tolLbl: null },
+      { id: 5,  name: 'Green',  hex: '#16a34a', swatch: '#22c55e', digit: 5,    mult: 1e5,      multLbl: '×100 kΩ',tol: 0.5,   tolLbl: '±0.5%' },
+      { id: 6,  name: 'Blue',   hex: '#2563eb', swatch: '#3b82f6', digit: 6,    mult: 1e6,      multLbl: '×1 MΩ',  tol: 0.25,  tolLbl: '±0.25%' },
+      { id: 7,  name: 'Violet', hex: '#7c3aed', swatch: '#8b5cf6', digit: 7,    mult: 1e7,      multLbl: '×10 MΩ', tol: 0.1,   tolLbl: '±0.1%' },
+      { id: 8,  name: 'Grey',   hex: '#64748b', swatch: '#64748b', digit: 8,    mult: 1e8,      multLbl: '×100 MΩ',tol: 0.05,  tolLbl: '±0.05%' },
+      { id: 9,  name: 'White',  hex: '#f8fafc', swatch: '#f8fafc', digit: 9,    mult: 1e9,      multLbl: '×1 GΩ',  tol: null,  tolLbl: null },
+      { id: 10, name: 'Gold',   hex: 'url(#bandGold)',   swatch: 'linear-gradient(135deg,#fef08a,#ca8a04)', digit: null, mult: 0.1,  multLbl: '×0.1 Ω',  tol: 5,  tolLbl: '±5%' },
+      { id: 11, name: 'Silver', hex: 'url(#bandSilver)', swatch: 'linear-gradient(135deg,#f8fafc,#64748b)', digit: null, mult: 0.01, multLbl: '×0.01 Ω', tol: 10, tolLbl: '±10%' }
+    ];
+
+    const resistorState = {
+      mode: 4, // 4 or 5
+      // Internal storage: [d1, d2, d3, multId, tolId]
+      bands: [4, 7, 0, 2, 10], // Default 4.7k ±5% (Yellow, Violet, [Black], Red, Gold)
+      suggestedE24: null
+    };
+
+    function setResistorMode(mode) {
+      resistorState.mode = mode;
+
+      const btn4 = document.getElementById('btn-mode-4band');
+      const btn5 = document.getElementById('btn-mode-5band');
+      const activeCls = 'px-4 py-2 rounded-lg text-xs font-semibold font-mono transition bg-sky-500 text-slate-950';
+      const idleCls   = 'px-4 py-2 rounded-lg text-xs font-semibold font-mono transition text-inkMuted hover:text-white';
+      btn4.className = mode === 4 ? activeCls : idleCls;
+      btn5.className = mode === 5 ? activeCls : idleCls;
+
+      // Switch body finish: Tan for 4-band carbon, Blue for 5-band metal film
+      document.getElementById('res-body-shape').setAttribute('fill', mode === 4 ? 'url(#bodyTan)' : 'url(#bodyBlue)');
+
+      renderResistorSelectors();
+      updateResistorDisplay();
+    }
+
+    function renderResistorSelectors() {
+      const container = document.getElementById('resistor-selectors');
+      const is5 = resistorState.mode === 5;
+      container.className = is5
+        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5'
+        : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4';
+
+      const cols = is5
+        ? [
+            { title: '1st Digit',  slot: 0, filter: c => c.digit !== null && c.digit > 0, valueFn: c => c.digit },
+            { title: '2nd Digit',  slot: 1, filter: c => c.digit !== null,                valueFn: c => c.digit },
+            { title: '3rd Digit',  slot: 2, filter: c => c.digit !== null,                valueFn: c => c.digit },
+            { title: 'Multiplier', slot: 3, filter: c => c.mult !== null,                 valueFn: c => c.multLbl },
+            { title: 'Tolerance',  slot: 4, filter: c => c.tol !== null,                  valueFn: c => c.tolLbl }
+          ]
+        : [
+            { title: '1st Digit',  slot: 0, filter: c => c.digit !== null && c.digit > 0, valueFn: c => c.digit },
+            { title: '2nd Digit',  slot: 1, filter: c => c.digit !== null,                valueFn: c => c.digit },
+            { title: 'Multiplier', slot: 3, filter: c => c.mult !== null,                 valueFn: c => c.multLbl },
+            { title: 'Tolerance',  slot: 4, filter: c => c.tol !== null,                  valueFn: c => c.tolLbl }
+          ];
+
+      container.innerHTML = cols.map(col => {
+        const currentId = resistorState.bands[col.slot];
+        const items = RESISTOR_COLORS.filter(col.filter).map(c => {
+          const isSelected = c.id === currentId;
+          return `
+            <button
+              onclick="selectResistorBand(${col.slot}, ${c.id})"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-mono transition border ${
+                isSelected
+                  ? 'bg-sky-500/15 border-sky-400 text-white shadow-[0_0_12px_rgba(56,189,248,0.18)]'
+                  : 'bg-[#0d1424] border-white/[0.06] text-inkMuted hover:border-white/20 hover:text-white'
+              }">
+              <span class="flex items-center gap-2.5">
+                <span class="w-4 h-4 rounded-md border border-white/20 shrink-0" style="background: ${c.swatch};"></span>
+                <span>${c.name}</span>
+              </span>
+              <span class="${isSelected ? 'text-cyanAccent font-semibold' : 'text-slate-400'}">${col.valueFn(c)}</span>
+            </button>
+          `;
+        }).join('');
+
+        return `
+          <div class="vb-card rounded-2xl p-4 space-y-2.5">
+            <div class="text-xs font-mono uppercase tracking-wider text-inkMuted pb-1 border-b border-white/[0.06]">${col.title}</div>
+            <div class="space-y-1.5">${items}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectResistorBand(slot, colorId) {
+      resistorState.bands[slot] = colorId;
+      renderResistorSelectors();
+      updateResistorDisplay();
+    }
+
+    function updateResistorDisplay() {
+      const [b0, b1, b2, bMult, bTol] = resistorState.bands;
+      const is5 = resistorState.mode === 5;
+
+      // Update SVG band fills & positions
+      const svg0 = document.getElementById('svg-band-0');
+      const svg1 = document.getElementById('svg-band-1');
+      const svg2 = document.getElementById('svg-band-2');
+      const svg3 = document.getElementById('svg-band-3');
+      const svg4 = document.getElementById('svg-band-4');
+
+      const lbl0 = document.getElementById('lbl-band-0');
+      const lbl1 = document.getElementById('lbl-band-1');
+      const lbl2 = document.getElementById('lbl-band-2');
+      const lbl3 = document.getElementById('lbl-band-3');
+      const lbl4 = document.getElementById('lbl-band-4');
+
+      svg0.setAttribute('fill', RESISTOR_COLORS[b0].hex);
+      svg1.setAttribute('fill', RESISTOR_COLORS[b1].hex);
+      svg3.setAttribute('fill', RESISTOR_COLORS[bMult].hex);
+      svg4.setAttribute('fill', RESISTOR_COLORS[bTol].hex);
+
+      if (is5) {
+        svg2.setAttribute('opacity', '1');
+        svg2.setAttribute('fill', RESISTOR_COLORS[b2].hex);
+        svg0.setAttribute('x', '178'); lbl0.setAttribute('x', '191');
+        svg1.setAttribute('x', '236'); lbl1.setAttribute('x', '249');
+        svg2.setAttribute('x', '290'); lbl2.setAttribute('x', '303'); lbl2.setAttribute('opacity', '1');
+        svg3.setAttribute('x', '344'); lbl3.setAttribute('x', '357');
+        svg4.setAttribute('x', '438'); lbl4.setAttribute('x', '451');
+      } else {
+        svg2.setAttribute('opacity', '0');
+        lbl2.setAttribute('opacity', '0');
+        svg0.setAttribute('x', '184'); lbl0.setAttribute('x', '197');
+        svg1.setAttribute('x', '256'); lbl1.setAttribute('x', '269');
+        svg3.setAttribute('x', '328'); lbl3.setAttribute('x', '341');
+        svg4.setAttribute('x', '438'); lbl4.setAttribute('x', '451');
+      }
+
+      // Compute resistance
+      const sigDigits = is5
+        ? (RESISTOR_COLORS[b0].digit * 100 + RESISTOR_COLORS[b1].digit * 10 + RESISTOR_COLORS[b2].digit)
+        : (RESISTOR_COLORS[b0].digit * 10 + RESISTOR_COLORS[b1].digit);
+
+      const resistance = sigDigits * RESISTOR_COLORS[bMult].mult;
+      const tolPct = RESISTOR_COLORS[bTol].tol || 5;
+      const minR = resistance * (1 - tolPct / 100);
+      const maxR = resistance * (1 + tolPct / 100);
+
+      document.getElementById('res-value-display').textContent = formatSI(resistance, 'Ω', 3);
+      document.getElementById('res-tol-display').textContent = `±${tolPct}%`;
+      document.getElementById('res-range-display').textContent = `${formatSI(minR, 'Ω', 3)} – ${formatSI(maxR, 'Ω', 3)}`;
+    }
+
+    function copyResistorResult() {
+      const val = document.getElementById('res-value-display').textContent;
+      const tol = document.getElementById('res-tol-display').textContent;
+      const rng = document.getElementById('res-range-display').textContent;
+      copyTextToClipboard(`${val} ${tol} (${rng})`, `Copied ${val} ${tol}`);
+    }
+
+    /**
+     * Parses strings like "4.7k", "4k7", "10000", "220R", "1.5M", "0.47" into Ohms.
+     */
+    function parseResistanceString(raw) {
+      let s = raw.trim().replace(/Ω|ohms?|ohm/gi, '').replace(/\s+/g, '');
+      if (!s) return NaN;
+
+      // Support shorthand like 4k7, 2M2, 4R7
+      const shorthand = s.match(/^(\d+)([kKmMgGrR])(\d+)$/);
+      if (shorthand) {
+        const num = parseFloat(`${shorthand[1]}.${shorthand[3]}`);
+        const unit = shorthand[2];
+        const mult = unit === 'k' || unit === 'K' ? 1e3
+                   : unit === 'M' || unit === 'm' ? 1e6
+                   : unit === 'G' || unit === 'g' ? 1e9
+                   : 1;
+        return num * mult;
+      }
+
+      const std = s.match(/^(\d*\.?\d+)([kKmMgGrR]?)$/);
+      if (!std) return NaN;
+      const num = parseFloat(std[1]);
+      const unit = std[2];
+      const mult = unit === 'k' || unit === 'K' ? 1e3
+                 : unit === 'M' || unit === 'm' ? 1e6
+                 : unit === 'G' || unit === 'g' ? 1e9
+                 : 1;
+      return num * mult;
+    }
+
+    /**
+     * Converts a numeric Ohm value into the closest band IDs for current mode (4 or 5 band).
+     */
+    function setBandsFromOhms(ohms) {
+      const is5 = resistorState.mode === 5;
+      const digitsCount = is5 ? 3 : 2;
+      const minSig = is5 ? 100 : 10;
+      const maxSig = is5 ? 999 : 99;
+
+      // Determine exponent so significant figure lies in [minSig, maxSig]
+      let exp = Math.floor(Math.log10(ohms)) - (digitsCount - 1);
+      let sig = Math.round(ohms / Math.pow(10, exp));
+
+      if (sig > maxSig) {
+        sig = Math.round(sig / 10);
+        exp += 1;
+      } else if (sig < minSig) {
+        sig = Math.round(sig * 10);
+        exp -= 1;
+      }
+
+      // Clamp multiplier exponent to representable color bands (-2 to +9)
+      if (exp < -2 || exp > 9) return false;
+
+      const multMap = {
+        '-2': 11, '-1': 10, '0': 0, '1': 1, '2': 2, '3': 3,
+        '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9
+      };
+
+      const sigStr = String(sig).padStart(digitsCount, '0');
+      resistorState.bands[0] = parseInt(sigStr[0], 10);
+      resistorState.bands[1] = parseInt(sigStr[1], 10);
+      if (is5) {
+        resistorState.bands[2] = parseInt(sigStr[2], 10);
+      }
+      resistorState.bands[3] = multMap[String(exp)];
+
+      renderResistorSelectors();
+      updateResistorDisplay();
+      return true;
+    }
+
+    function runReverseResistorLookup() {
+      const inputEl = document.getElementById('res-reverse-input');
+      const feedback = document.getElementById('res-reverse-feedback');
+      const e24Box = document.getElementById('res-e24-box');
+      const ohms = parseResistanceString(inputEl.value);
+
+      if (!isFinite(ohms) || ohms < 0.1 || ohms > 999e9) {
+        feedback.className = 'text-xs font-mono text-amber-300 min-h-[18px]';
+        feedback.textContent = 'Enter a valid resistance between 0.1 Ω and 999 GΩ (e.g., 4.7k, 220, 1M).';
+        e24Box.classList.add('hidden');
+        return;
+      }
+
+      const applied = setBandsFromOhms(ohms);
+      if (!applied) {
+        feedback.className = 'text-xs font-mono text-amber-300 min-h-[18px]';
+        feedback.textContent = 'Value outside standard color-band multiplier range.';
+        return;
+      }
+
+      const nearestE24 = findStandardE24(ohms, 'nearest');
+      resistorState.suggestedE24 = nearestE24;
+
+      const exactMatch = Math.abs(nearestE24 - ohms) / ohms < 0.005;
+      feedback.className = 'text-xs font-mono text-emerald-300 min-h-[18px]';
+      feedback.textContent = exactMatch
+        ? `Bands set to ${formatSI(ohms, 'Ω', 3)} — exact standard E24 value.`
+        : `Bands set for ${formatSI(ohms, 'Ω', 3)} (closest standard E24 is ${formatSI(nearestE24, 'Ω', 3)}).`;
+
+      document.getElementById('res-e24-value').textContent = formatSI(nearestE24, 'Ω', 3);
+      e24Box.classList.remove('hidden');
+      showToast(`Bands updated to ${document.getElementById('res-value-display').textContent}`, 'success');
+    }
+
+    function applyE24Suggestion() {
+      if (!resistorState.suggestedE24) return;
+      setBandsFromOhms(resistorState.suggestedE24);
+      document.getElementById('res-reverse-input').value = formatSI(resistorState.suggestedE24, '', 3).replace(/\s+/g, '');
+      document.getElementById('res-reverse-feedback').textContent = `Applied standard E24 value: ${formatSI(resistorState.suggestedE24, 'Ω', 3)}`;
+      showToast(`Applied E24 ${formatSI(resistorState.suggestedE24, 'Ω', 3)}`, 'success');
+    }
+
+    /* =========================================================================
+       5. PAGE 3: CIRCUIT CALCULATORS (OHM'S LAW, VOLTAGE DIVIDER, LED)
+       ========================================================================= */
+    function switchCalcTab(tabId) {
+      document.querySelectorAll('.calc-panel').forEach(p => {
+        p.classList.toggle('hidden', p.id !== `calc-panel-${tabId}`);
+      });
+      document.querySelectorAll('.calc-tab-btn').forEach(btn => {
+        const active = btn.dataset.calcTab === tabId;
+        btn.className = active
+          ? 'calc-tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold transition bg-sky-500 text-slate-950'
+          : 'calc-tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold transition text-inkMuted hover:text-white';
+      });
+    }
+
+    // --- 5A. Ohm's Law Solver ---
+    const ohmsState = {
+      editedOrder: [] // Tracks the last 2 edited keys from ['V','I','R','P']
+    };
+
+    function onOhmsInput(field) {
+      const val = document.getElementById(`ohms-${field}`).value;
+      // Update recency queue
+      ohmsState.editedOrder = ohmsState.editedOrder.filter(k => k !== field);
+      if (val !== '' && !isNaN(parseFloat(val))) {
+        ohmsState.editedOrder.push(field);
+        if (ohmsState.editedOrder.length > 2) {
+          ohmsState.editedOrder.shift();
+        }
+      }
+      solveOhmsLaw(false);
+    }
+
+    function onOhmsUnitChange(field) {
+      // If we already have 2 inputs, recompute using current units
+      solveOhmsLaw(false);
+    }
+
+    function getOhmsSI(field) {
+      const raw = parseFloat(document.getElementById(`ohms-${field}`).value);
+      const mult = parseFloat(document.getElementById(`ohms-unit-${field}`).value);
+      return isNaN(raw) ? NaN : raw * mult;
+    }
+
+    function setOhmsSI(field, siValue) {
+      const mult = parseFloat(document.getElementById(`ohms-unit-${field}`).value);
+      const display = siValue / mult;
+      const el = document.getElementById(`ohms-${field}`);
+      if (!isFinite(display) || isNaN(display)) {
+        el.value = '';
+        return;
+      }
+      el.value = Number(display.toPrecision(4)).toString();
+    }
+
+    function updateOhmsTags(inputs, computed) {
+      ['V', 'I', 'R', 'P'].forEach(k => {
+        const card = document.getElementById(`ohms-card-${k}`);
+        const tag = document.getElementById(`ohms-tag-${k}`);
+        if (inputs.includes(k)) {
+          card.className = 'rounded-xl p-4 bg-[#0d1424] border border-sky-400/40 space-y-2.5 transition';
+          tag.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/15 text-cyanAccent';
+          tag.textContent = 'INPUT';
+        } else if (computed.includes(k)) {
+          card.className = 'rounded-xl p-4 bg-[#0d1424] border border-emerald-400/35 space-y-2.5 transition';
+          tag.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emeraldAccent';
+          tag.textContent = 'SOLVED';
+        } else {
+          card.className = 'rounded-xl p-4 bg-[#0d1424] border border-white/[0.08] space-y-2.5 transition';
+          tag.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-slate-400';
+          tag.textContent = 'IDLE';
+        }
+      });
+    }
+
+    function solveOhmsLaw(explicitClick = false) {
+      const msg = document.getElementById('ohms-message');
+      msg.classList.add('hidden');
+
+      const keys = ohmsState.editedOrder.filter(k => {
+        const v = getOhmsSI(k);
+        return isFinite(v) && v > 0;
+      });
+
+      if (keys.length < 2) {
+        updateOhmsTags(keys, []);
+        if (explicitClick) {
+          msg.textContent = 'Please enter at least 2 positive non-zero values to solve.';
+          msg.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const [k1, k2] = keys;
+      const pair = [k1, k2].sort().join('');
+      let V = getOhmsSI('V'), I = getOhmsSI('I'), R = getOhmsSI('R'), P = getOhmsSI('P');
+
+      try {
+        if (pair === 'IV') {
+          R = V / I;
+          P = V * I;
+        } else if (pair === 'RV') {
+          I = V / R;
+          P = (V * V) / R;
+        } else if (pair === 'PV') {
+          I = P / V;
+          R = (V * V) / P;
+        } else if (pair === 'IR') {
+          V = I * R;
+          P = I * I * R;
+        } else if (pair === 'IP') {
+          V = P / I;
+          R = P / (I * I);
+        } else if (pair === 'PR') {
+          V = Math.sqrt(P * R);
+          I = Math.sqrt(P / R);
+        }
+
+        const computed = ['V', 'I', 'R', 'P'].filter(k => !keys.includes(k));
+        const resMap = { V, I, R, P };
+        computed.forEach(k => setOhmsSI(k, resMap[k]));
+        updateOhmsTags(keys, computed);
+
+        // Update safe wattage recommendation
+        const rec = getRecommendedWattage(P);
+        document.getElementById('ohms-wattage-badge').textContent = rec.label;
+        document.getElementById('ohms-power-note').textContent = `Dissipating ${formatSI(P, 'W', 2)}`;
+
+        const loadPct = Math.min(100, Math.round((P / rec.cap) * 100));
+        document.getElementById('ohms-load-pct').textContent = `${loadPct}% of ${rec.cap}W`;
+        const bar = document.getElementById('ohms-load-bar');
+        bar.style.width = `${loadPct}%`;
+        bar.className = loadPct > 75
+          ? 'h-full bg-amber-400 rounded-full transition-all duration-300'
+          : 'h-full bg-emerald-400 rounded-full transition-all duration-300';
+
+        if (explicitClick) showToast('Ohm’s Law solved', 'success');
+      } catch (err) {
+        msg.textContent = 'Invalid combination of values.';
+        msg.classList.remove('hidden');
+      }
+    }
+
+    function clearOhmsLaw() {
+      ohmsState.editedOrder = [];
+      ['V', 'I', 'R', 'P'].forEach(k => {
+        document.getElementById(`ohms-${k}`).value = '';
+      });
+      updateOhmsTags([], []);
+      document.getElementById('ohms-message').classList.add('hidden');
+      document.getElementById('ohms-wattage-badge').textContent = '1/4 W (0.25 W)';
+      document.getElementById('ohms-power-note').textContent = 'Dissipating 0 mW';
+      document.getElementById('ohms-load-pct').textContent = '0%';
+      document.getElementById('ohms-load-bar').style.width = '0%';
+    }
+
+    // --- 5B. Voltage Divider & Live Schematic ---
+    let dividerLoadEnabled = false;
+
+    function toggleDividerLoad() {
+      dividerLoadEnabled = !dividerLoadEnabled;
+      const btn = document.getElementById('div-rl-toggle');
+      const knob = document.getElementById('div-rl-knob');
+      const panel = document.getElementById('div-rl-controls');
+
+      btn.setAttribute('aria-checked', String(dividerLoadEnabled));
+      btn.className = dividerLoadEnabled
+        ? 'relative inline-flex h-6 w-11 items-center rounded-full bg-emerald-500 transition-colors'
+        : 'relative inline-flex h-6 w-11 items-center rounded-full bg-slate-700 transition-colors';
+      knob.className = dividerLoadEnabled
+        ? 'inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6'
+        : 'inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1';
+      panel.classList.toggle('hidden', !dividerLoadEnabled);
+
+      updateDivider();
+    }
+
+    function syncDividerFromSlider(key) {
+      const val = document.getElementById(`div-${key}-slider`).value;
+      document.getElementById(`div-${key}-num`).value = val;
+      updateDivider();
+    }
+
+    function syncDividerFromInput(key) {
+      const numEl = document.getElementById(`div-${key}-num`);
+      const sliderEl = document.getElementById(`div-${key}-slider`);
+      const val = parseFloat(numEl.value);
+      if (isFinite(val)) {
+        sliderEl.value = Math.min(parseFloat(sliderEl.max), Math.max(parseFloat(sliderEl.min), val));
+      }
+      updateDivider();
+    }
+
+    function updateDivider() {
+      const vin = Math.max(0, parseFloat(document.getElementById('div-vin-num').value) || 0);
+      const r1 = Math.max(1e-3, (parseFloat(document.getElementById('div-r1-num').value) || 0) * parseFloat(document.getElementById('div-r1-unit').value));
+      const r2 = Math.max(1e-3, (parseFloat(document.getElementById('div-r2-num').value) || 0) * parseFloat(document.getElementById('div-r2-unit').value));
+      const rl = Math.max(1e-3, (parseFloat(document.getElementById('div-rl-num').value) || 0) * parseFloat(document.getElementById('div-rl-unit').value));
+
+      const rBottom = dividerLoadEnabled ? (r2 * rl) / (r2 + rl) : r2;
+      const rTotal = r1 + rBottom;
+      const iTotal = vin / rTotal;
+      const vout = vin * (rBottom / rTotal);
+      const pR1 = Math.pow(vin - vout, 2) / r1;
+      const pR2 = Math.pow(vout, 2) / r2;
+      const iLoad = dividerLoadEnabled ? vout / rl : 0;
+
+      const ratio = vin > 0 ? vout / vin : 0;
+      const db = ratio > 0 ? (20 * Math.log10(ratio)).toFixed(1) : '-∞';
+
+      // Update cards
+      document.getElementById('div-out-vout').textContent = `${vout.toFixed(2)} V`;
+      document.getElementById('div-out-curr').textContent = formatSI(iTotal, 'A', 2);
+      document.getElementById('div-out-pr1').textContent = formatSI(pR1, 'W', 2);
+      document.getElementById('div-out-pr2').textContent = formatSI(pR2, 'W', 2);
+      document.getElementById('div-ratio-badge').textContent = `Ratio: ${ratio.toFixed(3)} (${db} dB)`;
+
+      // Update SVG annotations
+      document.getElementById('sch-vin').textContent = `Vin = ${vin.toFixed(1)} V`;
+      document.getElementById('sch-itot').textContent = formatSI(iTotal, 'A', 2);
+      document.getElementById('sch-r1').textContent = `R1 = ${formatSI(r1, 'Ω', 2)}`;
+      document.getElementById('sch-pr1').textContent = formatSI(pR1, 'W', 2);
+      document.getElementById('sch-r2').textContent = `R2 = ${formatSI(r2, 'Ω', 2)}`;
+      document.getElementById('sch-pr2').textContent = formatSI(pR2, 'W', 2);
+      document.getElementById('sch-vout').textContent = `${vout.toFixed(2)} V`;
+
+      const loadGroup = document.getElementById('sch-load-group');
+      loadGroup.setAttribute('opacity', dividerLoadEnabled ? '1' : '0');
+      document.getElementById('sch-rl').textContent = `RL = ${formatSI(rl, 'Ω', 2)}`;
+      document.getElementById('sch-iload').textContent = `IL = ${formatSI(iLoad, 'A', 2)}`;
+    }
+
+    function resetDivider() {
+      document.getElementById('div-vin-num').value = 12;
+      document.getElementById('div-vin-slider').value = 12;
+      document.getElementById('div-r1-num').value = 10;
+      document.getElementById('div-r1-slider').value = 10;
+      document.getElementById('div-r1-unit').value = 1000;
+      document.getElementById('div-r2-num').value = 10;
+      document.getElementById('div-r2-slider').value = 10;
+      document.getElementById('div-r2-unit').value = 1000;
+      if (dividerLoadEnabled) toggleDividerLoad();
+      updateDivider();
+    }
+
+    // --- 5C. LED Series Resistor Calculator ---
+    let currentLedColor = '#ef4444';
+
+    function applyLedPreset(name, vf, hexColor) {
+      currentLedColor = hexColor;
+      document.getElementById('led-vf').value = vf.toFixed(1);
+      updateLedCalc();
+      showToast(`Applied ${name} LED (${vf}V)`, 'info');
+    }
+
+    function setLedSupply(volts) {
+      document.getElementById('led-vs').value = volts;
+      updateLedCalc();
+    }
+
+    function updateLedCalc() {
+      const vs = parseFloat(document.getElementById('led-vs').value);
+      const vf = parseFloat(document.getElementById('led-vf').value);
+      const ifMa = parseFloat(document.getElementById('led-if').value);
+      const warn = document.getElementById('led-warning');
+
+      // Update SVG LED color
+      document.getElementById('led-svg-tri').setAttribute('fill', currentLedColor);
+      document.getElementById('led-svg-tri').setAttribute('stroke', currentLedColor);
+      document.getElementById('led-svg-bar').setAttribute('stroke', currentLedColor);
+      document.getElementById('led-svg-rays').setAttribute('stroke', currentLedColor);
+
+      if (!isFinite(vs) || !isFinite(vf) || !isFinite(ifMa) || ifMa <= 0 || vs <= 0 || vf <= 0) {
+        warn.textContent = 'Enter positive values for Supply Voltage, Forward Voltage, and Current.';
+        warn.classList.remove('hidden');
+        return;
+      }
+
+      if (vs <= vf) {
+        warn.textContent = `Supply voltage (${vs}V) must be strictly greater than LED forward voltage (${vf}V) to forward-bias the LED.`;
+        warn.classList.remove('hidden');
+        document.getElementById('led-out-exact').textContent = '—';
+        document.getElementById('led-out-e24').textContent = '—';
+        document.getElementById('led-out-actual-i').textContent = '0 mA';
+        document.getElementById('led-out-power').textContent = '0 mW';
+        document.getElementById('led-svg-diode').setAttribute('opacity', '0.35');
+        return;
+      }
+
+      warn.classList.add('hidden');
+      document.getElementById('led-svg-diode').setAttribute('opacity', '1');
+
+      const iTarget = ifMa / 1000;
+      const vDrop = vs - vf;
+      const rExact = vDrop / iTarget;
+      // Choose next-higher-or-equal E24 value so LED isn't overdriven
+      const rE24 = findStandardE24(rExact, 'ceil');
+      const iActual = vDrop / rE24;
+      const pRes = iActual * iActual * rE24;
+      const wattRec = getRecommendedWattage(pRes);
+
+      document.getElementById('led-out-exact').textContent = formatSI(rExact, 'Ω', 2);
+      document.getElementById('led-out-e24').textContent = formatSI(rE24, 'Ω', 2);
+      document.getElementById('led-out-actual-i').textContent = `${(iActual * 1000).toFixed(1)} mA`;
+      document.getElementById('led-out-power').textContent = formatSI(pRes, 'W', 2);
+      document.getElementById('led-out-watt').textContent = `Recommended: ${wattRec.label}`;
+
+      // Update mini SVG annotations
+      document.getElementById('led-svg-vs').textContent = `${vs.toFixed(1)} V`;
+      document.getElementById('led-svg-r').textContent = formatSI(rE24, 'Ω', 2);
+      document.getElementById('led-svg-vf').textContent = `Vf = ${vf.toFixed(1)}V`;
+    }
+
+    /* =========================================================================
+       6. PAGE 4: RC SIGNAL & FILTER VISUALIZER (60FPS HTML5 CANVAS)
+       ========================================================================= */
+    const rcState = {
+      mode: 'step',        // 'step' | 'bode'
+      filterType: 'lowpass', // 'lowpass' | 'highpass'
+      vs: 5.0,             // Volts
+      r: 10000,            // Ohms (10 kΩ)
+      c: 100e-9,           // Farads (100 nF)
+      hoverX: null,        // Canvas local mouse X
+      rafId: null
+    };
+
+    function setRcMode(mode) {
+      rcState.mode = mode;
+      const btnStep = document.getElementById('rc-mode-step');
+      const btnBode = document.getElementById('rc-mode-bode');
+      const activeCls = 'px-4 py-2 rounded-lg text-xs font-semibold transition bg-sky-500 text-slate-950';
+      const idleCls   = 'px-4 py-2 rounded-lg text-xs font-semibold transition text-inkMuted hover:text-white';
+      btnStep.className = mode === 'step' ? activeCls : idleCls;
+      btnBode.className = mode === 'bode' ? activeCls : idleCls;
+
+      document.getElementById('rc-step-legend').classList.toggle('hidden', mode !== 'step');
+      document.getElementById('rc-bode-controls').classList.toggle('hidden', mode !== 'bode');
+      document.getElementById('rc-cursor-readout').textContent = 'Hover plot to inspect';
+      rcState.hoverX = null;
+      scheduleRcDraw();
+    }
+
+    function setFilterType(type) {
+      rcState.filterType = type;
+      const lp = document.getElementById('rc-filter-lp');
+      const hp = document.getElementById('rc-filter-hp');
+      const activeCls = 'px-3 py-1 rounded-md text-xs font-mono transition bg-sky-500/20 text-cyanAccent border border-sky-400/30';
+      const idleCls   = 'px-3 py-1 rounded-md text-xs font-mono transition text-inkMuted hover:text-white border border-transparent';
+      lp.className = type === 'lowpass' ? activeCls : idleCls;
+      hp.className = type === 'highpass' ? activeCls : idleCls;
+      scheduleRcDraw();
+    }
+
+    function syncRcFromSlider(param) {
+      if (param === 'v') {
+        rcState.vs = parseFloat(document.getElementById('rc-v-slider').value);
+        document.getElementById('rc-v-num').value = rcState.vs.toFixed(1);
+      } else if (param === 'r') {
+        const exp = parseFloat(document.getElementById('rc-r-slider').value);
+        const ohms = Math.pow(10, exp);
+        rcState.r = ohms;
+        // Pick cleanest unit dropdown
+        const unitEl = document.getElementById('rc-r-unit');
+        let mult = 1;
+        if (ohms >= 1e6) mult = 1e6;
+        else if (ohms >= 1e3) mult = 1e3;
+        unitEl.value = String(mult);
+        document.getElementById('rc-r-num').value = Number((ohms / mult).toPrecision(3));
+      } else if (param === 'c') {
+        const exp = parseFloat(document.getElementById('rc-c-slider').value);
+        const farads = Math.pow(10, exp);
+        rcState.c = farads;
+        const unitEl = document.getElementById('rc-c-unit');
+        let mult = 1e-12;
+        if (farads >= 1e-3) mult = 1e-3;
+        else if (farads >= 1e-6) mult = 1e-6;
+        else if (farads >= 1e-9) mult = 1e-9;
+        unitEl.value = String(mult);
+        document.getElementById('rc-c-num').value = Number((farads / mult).toPrecision(3));
+      }
+      updateRcMetrics();
+      scheduleRcDraw();
+    }
+
+    function syncRcFromInput(param) {
+      if (param === 'v') {
+        const v = Math.max(0.1, parseFloat(document.getElementById('rc-v-num').value) || 0.1);
+        rcState.vs = v;
+        document.getElementById('rc-v-slider').value = Math.min(24, Math.max(1, v));
+      } else if (param === 'r') {
+        const num = Math.max(0.01, parseFloat(document.getElementById('rc-r-num').value) || 1);
+        const mult = parseFloat(document.getElementById('rc-r-unit').value);
+        rcState.r = num * mult;
+        document.getElementById('rc-r-slider').value = Math.min(7, Math.max(1, Math.log10(rcState.r)));
+      } else if (param === 'c') {
+        const num = Math.max(0.01, parseFloat(document.getElementById('rc-c-num').value) || 1);
+        const mult = parseFloat(document.getElementById('rc-c-unit').value);
+        rcState.c = num * mult;
+        document.getElementById('rc-c-slider').value = Math.min(-2, Math.max(-11, Math.log10(rcState.c)));
+      }
+      updateRcMetrics();
+      scheduleRcDraw();
+    }
+
+    function applyRcPreset(vs, r, c) {
+      rcState.vs = vs;
+      rcState.r = r;
+      rcState.c = c;
+
+      document.getElementById('rc-v-num').value = vs;
+      document.getElementById('rc-v-slider').value = Math.min(24, Math.max(1, vs));
+
+      document.getElementById('rc-r-slider').value = Math.log10(r);
+      const rMult = r >= 1e6 ? 1e6 : r >= 1e3 ? 1e3 : 1;
+      document.getElementById('rc-r-unit').value = String(rMult);
+      document.getElementById('rc-r-num').value = Number((r / rMult).toPrecision(3));
+
+      document.getElementById('rc-c-slider').value = Math.log10(c);
+      const cMult = c >= 1e-3 ? 1e-3 : c >= 1e-6 ? 1e-6 : c >= 1e-9 ? 1e-9 : 1e-12;
+      document.getElementById('rc-c-unit').value = String(cMult);
+      document.getElementById('rc-c-num').value = Number((c / cMult).toPrecision(3));
+
+      updateRcMetrics();
+      scheduleRcDraw();
+    }
+
+    function updateRcMetrics() {
+      const tau = rcState.r * rcState.c;
+      const fc = 1 / (2 * Math.PI * tau);
+      document.getElementById('rc-out-tau').textContent = formatSI(tau, 's', 2);
+      document.getElementById('rc-out-5tau').textContent = formatSI(tau * 5, 's', 2);
+      document.getElementById('rc-out-fc').textContent = formatSI(fc, 'Hz', 2);
+      document.getElementById('rc-out-xc').textContent = formatSI(rcState.r, 'Ω', 2);
+    }
+
+    function resizeRcCanvas() {
+      const wrap = document.getElementById('rc-canvas-wrap');
+      const canvas = document.getElementById('rc-canvas');
+      if (!wrap || !canvas) return;
+      const rect = wrap.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+    }
+
+    function scheduleRcDraw() {
+      if (rcState.rafId) return;
+      rcState.rafId = requestAnimationFrame(() => {
+        rcState.rafId = null;
+        drawRcPlot();
+      });
+    }
+
+    function drawRcPlot() {
+      const canvas = document.getElementById('rc-canvas');
+      if (!canvas || canvas.width === 0) return;
+
+      const ctx = canvas.getContext('2d');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const W = canvas.width / dpr;
+      const H = canvas.height / dpr;
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      // Clear background
+      ctx.fillStyle = '#070b14';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { top: 26, right: 24, bottom: 44, left: 56 };
+      const plotW = Math.max(10, W - pad.left - pad.right);
+      const plotH = Math.max(10, H - pad.top - pad.bottom);
+
+      if (rcState.mode === 'step') {
+        drawStepResponse(ctx, pad, plotW, plotH);
+      } else {
+        drawBodePlot(ctx, pad, plotW, plotH);
+      }
+
+      ctx.restore();
+    }
+
+    function drawStepResponse(ctx, pad, plotW, plotH) {
+      const tau = rcState.r * rcState.c;
+      const vs = rcState.vs;
+      const showCharge = document.getElementById('rc-show-charge').checked;
+      const showDischarge = document.getElementById('rc-show-discharge').checked;
+
+      // Horizontal Gridlines (0% to 100% Vs)
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+
+      for (let i = 0; i <= 5; i++) {
+        const frac = i / 5;
+        const y = pad.top + plotH * (1 - frac);
+        ctx.strokeStyle = i === 0 ? 'rgba(148,163,184,0.28)' : 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + plotW, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(`${(vs * frac).toFixed(1)}V`, pad.left - 8, y);
+      }
+
+      // Vertical Gridlines (0 to 5τ)
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      for (let k = 0; k <= 5; k++) {
+        const x = pad.left + (k / 5) * plotW;
+        ctx.strokeStyle = k === 0 ? 'rgba(148,163,184,0.28)' : 'rgba(255,255,255,0.07)';
+        ctx.setLineDash(k === 0 ? [] : [4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top);
+        ctx.lineTo(x, pad.top + plotH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = k === 1 ? '#38bdf8' : '#94a3b8';
+        ctx.fillText(k === 0 ? '0' : `${k}τ`, x, pad.top + plotH + 8);
+        if (k > 0) {
+          ctx.fillStyle = '#475569';
+          ctx.fillText(formatSI(k * tau, 's', 1), x, pad.top + plotH + 23);
+        }
+      }
+
+      // Discharging Curve (Dashed Emerald)
+      if (showDischarge) {
+        ctx.save();
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        const steps = 180;
+        for (let i = 0; i <= steps; i++) {
+          const tNorm = (i / steps) * 5;
+          const x = pad.left + (tNorm / 5) * plotW;
+          const y = pad.top + plotH * (1 - Math.exp(-tNorm));
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Charging Curve (Glowing Cyan)
+      if (showCharge) {
+        // Subtle gradient fill under curve
+        const fillGrad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+        fillGrad.addColorStop(0, 'rgba(56, 189, 248, 0.20)');
+        fillGrad.addColorStop(1, 'rgba(56, 189, 248, 0.00)');
+
+        ctx.beginPath();
+        const steps = 200;
+        for (let i = 0; i <= steps; i++) {
+          const tNorm = (i / steps) * 5;
+          const x = pad.left + (tNorm / 5) * plotW;
+          const y = pad.top + plotH * Math.exp(-tNorm);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+
+        // Glow stroke
+        ctx.save();
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2.8;
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.65)';
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.restore();
+
+        // Fill underneath
+        ctx.lineTo(pad.left + plotW, pad.top + plotH);
+        ctx.lineTo(pad.left, pad.top + plotH);
+        ctx.closePath();
+        ctx.fillStyle = fillGrad;
+        ctx.fill();
+
+        // Mark τ..5τ Key Points
+        const pctLabels = ['63.2%', '86.5%', '95.0%', '98.2%', '99.3%'];
+        for (let k = 1; k <= 5; k++) {
+          const x = pad.left + (k / 5) * plotW;
+          const y = pad.top + plotH * Math.exp(-k);
+          ctx.beginPath();
+          ctx.arc(x, y, k === 1 ? 4.5 : 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = k === 1 ? '#f59e0b' : '#38bdf8';
+          ctx.fill();
+          ctx.strokeStyle = '#070b14';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          if (plotW > 360 || k === 1 || k === 5) {
+            ctx.fillStyle = k === 1 ? '#fbbf24' : '#cbd5e1';
+            ctx.font = '10px "JetBrains Mono", monospace';
+            ctx.textAlign = k === 5 ? 'right' : 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(pctLabels[k - 1], k === 5 ? x - 4 : x, y - 7);
+          }
+        }
+      }
+
+      // Interactive Hover Crosshair
+      if (rcState.hoverX !== null && rcState.hoverX >= pad.left && rcState.hoverX <= pad.left + plotW) {
+        const frac = (rcState.hoverX - pad.left) / plotW;
+        const tNorm = frac * 5;
+        const tSec = tNorm * tau;
+        const vCharge = vs * (1 - Math.exp(-tNorm));
+        const vDis = vs * Math.exp(-tNorm);
+
+        ctx.strokeStyle = 'rgba(241, 245, 249, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(rcState.hoverX, pad.top);
+        ctx.lineTo(rcState.hoverX, pad.top + plotH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (showCharge) {
+          const yC = pad.top + plotH * Math.exp(-tNorm);
+          ctx.beginPath();
+          ctx.arc(rcState.hoverX, yC, 5, 0, Math.PI * 2);
+          ctx.fillStyle = '#38bdf8';
+          ctx.fill();
+        }
+        document.getElementById('rc-cursor-readout').textContent =
+          `t=${formatSI(tSec, 's', 2)} (${tNorm.toFixed(2)}τ) · Chg=${vCharge.toFixed(2)}V · Dis=${vDis.toFixed(2)}V`;
+      }
+    }
+
+    function drawBodePlot(ctx, pad, plotW, plotH) {
+      const tau = rcState.r * rcState.c;
+      const fc = 1 / (2 * Math.PI * tau);
+      const isLP = rcState.filterType === 'lowpass';
+
+      // 4 decades centered on fc: [fc / 100, fc * 100]
+      const logMin = Math.log10(fc) - 2;
+      const logMax = Math.log10(fc) + 2;
+      const dbMin = -40;
+      const dbMax = 5;
+
+      const freqToX = f => pad.left + ((Math.log10(f) - logMin) / (logMax - logMin)) * plotW;
+      const dbToY = db => pad.top + ((dbMax - Math.max(dbMin, Math.min(dbMax, db))) / (dbMax - dbMin)) * plotH;
+
+      // Horizontal dB Gridlines
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      const dbTicks = [0, -3, -10, -20, -30, -40];
+      for (const db of dbTicks) {
+        const y = dbToY(db);
+        const is3db = db === -3;
+        ctx.strokeStyle = is3db ? 'rgba(245, 158, 11, 0.35)' : db === 0 ? 'rgba(148,163,184,0.28)' : 'rgba(255,255,255,0.06)';
+        ctx.setLineDash(is3db ? [4, 4] : []);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + plotW, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = is3db ? '#fbbf24' : '#64748b';
+        ctx.fillText(`${db} dB`, pad.left - 8, y);
+      }
+
+      // Logarithmic Vertical Gridlines (Decades & Sub-decades)
+      const startDec = Math.floor(logMin);
+      const endDec = Math.ceil(logMax);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      for (let d = startDec; d <= endDec; d++) {
+        for (let m = 1; m <= 9; m++) {
+          const f = m * Math.pow(10, d);
+          const lf = Math.log10(f);
+          if (lf < logMin || lf > logMax) continue;
+          const x = freqToX(f);
+          ctx.strokeStyle = m === 1 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.035)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, pad.top);
+          ctx.lineTo(x, pad.top + plotH);
+          ctx.stroke();
+
+          if (m === 1) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(formatSI(f, 'Hz', 0), x, pad.top + plotH + 10);
+          }
+        }
+      }
+
+      // Plot Magnitude Curve
+      ctx.beginPath();
+      const samples = 240;
+      for (let i = 0; i <= samples; i++) {
+        const lf = logMin + (i / samples) * (logMax - logMin);
+        const f = Math.pow(10, lf);
+        const ratio = f / fc;
+        const mag = isLP
+          ? 1 / Math.sqrt(1 + ratio * ratio)
+          : ratio / Math.sqrt(1 + ratio * ratio);
+        const db = 20 * Math.log10(Math.max(mag, 1e-6));
+        const x = pad.left + (i / samples) * plotW;
+        const y = dbToY(db);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+
+      ctx.save();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.8;
+      ctx.shadowColor = 'rgba(56, 189, 248, 0.65)';
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+      ctx.restore();
+
+      // Vertical Amber Cutoff Marker at fc (-3dB)
+      const xFc = freqToX(fc);
+      const y3dB = dbToY(-3.01);
+
+      ctx.save();
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(xFc, pad.top);
+      ctx.lineTo(xFc, pad.top + plotH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Glowing Amber Intersection Dot
+      ctx.beginPath();
+      ctx.arc(xFc, y3dB, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#f59e0b';
+      ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.strokeStyle = '#070b14';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+
+      // Label fc marker
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = '600 11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(`fc = ${formatSI(fc, 'Hz', 2)} (-3dB)`, xFc + 8, pad.top + 16);
+
+      // Interactive Hover Crosshair
+      if (rcState.hoverX !== null && rcState.hoverX >= pad.left && rcState.hoverX <= pad.left + plotW) {
+        const frac = (rcState.hoverX - pad.left) / plotW;
+        const f = Math.pow(10, logMin + frac * (logMax - logMin));
+        const ratio = f / fc;
+        const mag = isLP ? 1 / Math.sqrt(1 + ratio * ratio) : ratio / Math.sqrt(1 + ratio * ratio);
+        const db = 20 * Math.log10(Math.max(mag, 1e-6));
+        const phaseDeg = isLP
+          ? -Math.atan(ratio) * (180 / Math.PI)
+          : Math.atan(1 / ratio) * (180 / Math.PI);
+
+        const y = dbToY(db);
+        ctx.strokeStyle = 'rgba(241, 245, 249, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(rcState.hoverX, pad.top);
+        ctx.lineTo(rcState.hoverX, pad.top + plotH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.arc(rcState.hoverX, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fill();
+
+        document.getElementById('rc-cursor-readout').textContent =
+          `f=${formatSI(f, 'Hz', 2)} · Gain=${db.toFixed(1)} dB · Phase=${phaseDeg.toFixed(1)}°`;
+      }
+    }
+
+    function initRcCanvasEvents() {
+      const canvas = document.getElementById('rc-canvas');
+      const handleMove = (clientX) => {
+        const rect = canvas.getBoundingClientRect();
+        rcState.hoverX = clientX - rect.left;
+        scheduleRcDraw();
+      };
+
+      canvas.addEventListener('mousemove', e => handleMove(e.clientX));
+      canvas.addEventListener('mouseleave', () => {
+        rcState.hoverX = null;
+        document.getElementById('rc-cursor-readout').textContent = 'Hover plot to inspect';
+        scheduleRcDraw();
+      });
+      canvas.addEventListener('touchmove', e => {
+        if (e.touches.length > 0) handleMove(e.touches[0].clientX);
+      }, { passive: true });
+      canvas.addEventListener('touchend', () => {
+        rcState.hoverX = null;
+        scheduleRcDraw();
+      });
+
+      window.addEventListener('resize', () => {
+        if (currentPage === 'rc-filter') {
+          resizeRcCanvas();
+          scheduleRcDraw();
+        }
+      });
+    }
+
+    /* =========================================================================
+       7. PAGE 5: DIGITAL & LOGIC LAB
+       ========================================================================= */
+    // --- 7A. 8-Bit Binary & Base Converter ---
+    let digitalByte = 42; // 0x2A = 00101010
+
+    function setDigitalByte(val, skipField = null) {
+      digitalByte = ((Math.floor(val) % 256) + 256) % 256;
+      renderBitSwitches();
+
+      if (skipField !== 'dec') document.getElementById('base-dec').value = String(digitalByte);
+      if (skipField !== 'hex') document.getElementById('base-hex').value = digitalByte.toString(16).toUpperCase().padStart(2, '0');
+      if (skipField !== 'bin') document.getElementById('base-bin').value = digitalByte.toString(2).padStart(8, '0');
+      if (skipField !== 'oct') document.getElementById('base-oct').value = digitalByte.toString(8).padStart(3, '0');
+
+      const signed = digitalByte > 127 ? digitalByte - 256 : digitalByte;
+      document.getElementById('base-signed').textContent = `int8: ${signed}`;
+      const ascii = (digitalByte >= 32 && digitalByte <= 126) ? `'${String.fromCharCode(digitalByte)}'` : 'non-print';
+      document.getElementById('base-ascii').textContent = `ASCII: ${ascii}`;
+    }
+
+    function renderBitSwitches() {
+      const grid = document.getElementById('bit-switches-grid');
+      let html = '';
+      for (let bit = 7; bit >= 0; bit--) {
+        const isOn = (digitalByte >> bit) & 1;
+        const weight = 1 << bit;
+        html += `
+          <button
+            onclick="toggleBit(${bit})"
+            class="rounded-2xl p-3 flex flex-col items-center justify-between gap-2 border transition select-none ${
+              isOn
+                ? 'bg-sky-500/15 border-sky-400/60 glow-cyan'
+                : 'bg-[#0d1424] border-white/[0.08] hover:border-white/20'
+            }">
+            <span class="text-[10px] font-mono text-inkMuted">B${bit}</span>
+            <span class="w-3 h-3 rounded-full transition ${
+              isOn ? 'bg-cyanAccent shadow-[0_0_10px_#38bdf8]' : 'bg-slate-700'
+            }"></span>
+            <span class="text-xl font-bold font-mono ${isOn ? 'text-white' : 'text-slate-500'}">${isOn}</span>
+            <span class="text-[10px] font-mono ${isOn ? 'text-cyanAccent' : 'text-slate-500'}">${weight}</span>
+          </button>
+        `;
+      }
+      grid.innerHTML = html;
+    }
+
+    function toggleBit(bit) {
+      setDigitalByte(digitalByte ^ (1 << bit));
+    }
+
+    function bitwiseOp(op) {
+      if (op === 'shl') setDigitalByte((digitalByte << 1) & 0xFF);
+      else if (op === 'shr') setDigitalByte(digitalByte >> 1);
+      else if (op === 'not') setDigitalByte((~digitalByte) & 0xFF);
+      else if (op === 'clear') setDigitalByte(0);
+    }
+
+    function onBaseInput(base, raw) {
+      const cleaned = raw.trim();
+      if (!cleaned) return;
+      let parsed = NaN;
+      if (base === 'dec' && /^\d+$/.test(cleaned)) parsed = parseInt(cleaned, 10);
+      else if (base === 'hex' && /^[0-9a-fA-F]+$/.test(cleaned)) parsed = parseInt(cleaned, 16);
+      else if (base === 'bin' && /^[01]+$/.test(cleaned)) parsed = parseInt(cleaned, 2);
+      else if (base === 'oct' && /^[0-7]+$/.test(cleaned)) parsed = parseInt(cleaned, 8);
+
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 255) {
+        setDigitalByte(parsed, base);
+      }
+    }
+
+    // --- 7B. Interactive Logic Gate Playground ---
+    const LOGIC_GATES = {
+      AND:  { name: 'AND Gate',  expr: 'Q = A · B',      fn: (a, b) => (a & b),       desc: 'Outputs HIGH (1) only when both Input A and Input B are HIGH.' },
+      OR:   { name: 'OR Gate',   expr: 'Q = A + B',      fn: (a, b) => (a | b),       desc: 'Outputs HIGH (1) if at least one input is HIGH.' },
+      NAND: { name: 'NAND Gate', expr: 'Q = ¬(A · B)',   fn: (a, b) => (a & b) ^ 1,   desc: 'Universal gate. Outputs LOW (0) only when both inputs are HIGH.' },
+      NOR:  { name: 'NOR Gate',  expr: 'Q = ¬(A + B)',   fn: (a, b) => (a | b) ^ 1,   desc: 'Universal gate. Outputs HIGH (1) only when both inputs are LOW.' },
+      XOR:  { name: 'XOR Gate',  expr: 'Q = A ⊕ B',      fn: (a, b) => (a ^ b),       desc: 'Exclusive OR. Outputs HIGH (1) when inputs differ.' },
+      XNOR: { name: 'XNOR Gate', expr: 'Q = ¬(A ⊕ B)',   fn: (a, b) => (a ^ b) ^ 1,   desc: 'Equivalence gate. Outputs HIGH (1) when both inputs match.' }
+    };
+
+    const logicState = {
+      gate: 'AND',
+      a: 1,
+      b: 0
+    };
+
+    function selectLogicGate(gateKey) {
+      logicState.gate = gateKey;
+      renderLogicLab();
+    }
+
+    function toggleLogicInput(which) {
+      if (which === 'A') logicState.a ^= 1;
+      else logicState.b ^= 1;
+      renderLogicLab();
+    }
+
+    function setLogicInputs(a, b) {
+      logicState.a = a;
+      logicState.b = b;
+      renderLogicLab();
+    }
+
+    function renderLogicLab() {
+      const gateDef = LOGIC_GATES[logicState.gate];
+      const outQ = gateDef.fn(logicState.a, logicState.b);
+
+      // Gate selector pills
+      document.getElementById('gate-selector').innerHTML = Object.keys(LOGIC_GATES).map(k => {
+        const active = k === logicState.gate;
+        return `
+          <button onclick="selectLogicGate('${k}')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition border ${
+            active
+              ? 'bg-sky-500 text-slate-950 border-sky-400'
+              : 'vb-control text-inkMuted hover:text-white hover:border-white/20'
+          }">${k}</button>
+        `;
+      }).join('');
+
+      document.getElementById('gate-title').textContent = gateDef.name;
+      document.getElementById('gate-expr').textContent = gateDef.expr;
+      document.getElementById('gate-desc').textContent = gateDef.desc;
+
+      // Style A & B buttons
+      ['a', 'b'].forEach(k => {
+        const val = logicState[k];
+        const btn = document.getElementById(`logic-btn-${k}`);
+        const txt = document.getElementById(`logic-val-${k}`);
+        txt.textContent = String(val);
+        btn.className = val
+          ? 'flex items-center justify-between gap-4 px-4 py-3 rounded-xl border transition min-w-[125px] bg-sky-500/15 border-sky-400 text-cyanAccent glow-cyan'
+          : 'flex items-center justify-between gap-4 px-4 py-3 rounded-xl border transition min-w-[125px] bg-[#111827] border-white/[0.08] text-slate-400 hover:border-white/20';
+      });
+
+      // Render Live ANSI SVG Schematic
+      const colA = logicState.a ? '#38bdf8' : '#334155';
+      const colB = logicState.b ? '#38bdf8' : '#334155';
+      const colQ = outQ ? '#10b981' : '#334155';
+
+      const g = logicState.gate;
+      const isAndShape = g === 'AND' || g === 'NAND';
+      const isXorShape = g === 'XOR' || g === 'XNOR';
+      const hasBubble  = g === 'NAND' || g === 'NOR' || g === 'XNOR';
+
+      let bodySvg = '';
+      if (isAndShape) {
+        bodySvg = `<path d="M 100,34 L 146,34 A 46,46 0 0 1 146,126 L 100,126 Z" fill="#161f32" stroke="#f1f5f9" stroke-width="2.5" stroke-linejoin="round" />`;
+      } else {
+        bodySvg = `<path d="M 96,34 Q 146,34 192,80 Q 146,126 96,126 Q 118,80 96,34 Z" fill="#161f32" stroke="#f1f5f9" stroke-width="2.5" stroke-linejoin="round" />`;
+      }
+      const xorArc = isXorShape
+        ? `<path d="M 85,34 Q 107,80 85,126" fill="none" stroke="#f1f5f9" stroke-width="2.5" stroke-linecap="round" />`
+        : '';
+
+      const outStart = hasBubble ? 206 : 192;
+      const bubbleSvg = hasBubble
+        ? `<circle cx="199" cy="80" r="7" fill="#161f32" stroke="#f1f5f9" stroke-width="2.5" />`
+        : '';
+
+      const wireInEnd = isAndShape ? 100 : (isXorShape ? 96 : 104);
+
+      document.getElementById('logic-gate-svg').innerHTML = `
+        <defs>
+          <filter id="wireGlow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="3.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- Input A Wire -->
+        <line x1="28" y1="58" x2="${wireInEnd}" y2="58" stroke="${colA}" stroke-width="3.2" ${logicState.a ? 'filter="url(#wireGlow)"' : ''} />
+        <text x="16" y="62" fill="${colA}" font-size="13" font-weight="700">A</text>
+
+        <!-- Input B Wire -->
+        <line x1="28" y1="102" x2="${wireInEnd}" y2="102" stroke="${colB}" stroke-width="3.2" ${logicState.b ? 'filter="url(#wireGlow)"' : ''} />
+        <text x="16" y="106" fill="${colB}" font-size="13" font-weight="700">B</text>
+
+        <!-- Output Q Wire -->
+        <line x1="${outStart}" y1="80" x2="264" y2="80" stroke="${colQ}" stroke-width="3.2" ${outQ ? 'filter="url(#wireGlow)"' : ''} />
+
+        <!-- Gate Shape -->
+        ${xorArc}
+        ${bodySvg}
+        ${bubbleSvg}
+        <text x="142" y="84" fill="#94a3b8" font-size="12" font-weight="700" text-anchor="middle">${g}</text>
+
+        <!-- Output LED -->
+        <circle cx="282" cy="80" r="16" fill="${outQ ? 'rgba(16,185,129,0.2)' : '#111827'}" stroke="${colQ}" stroke-width="2.5" ${outQ ? 'filter="url(#wireGlow)"' : ''} />
+        <text x="282" y="85" fill="${outQ ? '#10b981' : '#64748b'}" font-size="14" font-weight="700" text-anchor="middle">${outQ}</text>
+        <text x="282" y="114" fill="#64748b" font-size="10" text-anchor="middle">OUT Q</text>
+      `;
+
+      // Render Interactive Truth Table
+      const combos = [[0, 0], [0, 1], [1, 0], [1, 1]];
+      document.getElementById('truth-table-body').innerHTML = combos.map(([a, b]) => {
+        const q = gateDef.fn(a, b);
+        const isCurrent = a === logicState.a && b === logicState.b;
+        return `
+          <tr onclick="setLogicInputs(${a}, ${b})" class="cursor-pointer transition ${
+            isCurrent
+              ? 'bg-sky-500/15 text-white font-bold'
+              : 'hover:bg-white/[0.03] text-inkMuted'
+          }">
+            <td class="py-2.5 px-4 ${isCurrent ? 'text-cyanAccent' : ''}">${a}</td>
+            <td class="py-2.5 px-4 ${isCurrent ? 'text-cyanAccent' : ''}">${b}</td>
+            <td class="py-2.5 px-4">
+              <span class="inline-flex items-center justify-center w-7 h-6 rounded-md text-xs ${
+                q
+                  ? 'bg-emerald-500/20 text-emeraldAccent border border-emerald-400/30'
+                  : 'bg-white/5 text-slate-400'
+              }">${q}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    /* =========================================================================
+       8. INITIALIZATION ON DOM READY
+       ========================================================================= */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Mobile drawer listeners
+      document.getElementById('mobile-menu-btn').addEventListener('click', openMobileSidebar);
+      document.getElementById('mobile-close-btn').addEventListener('click', closeMobileSidebar);
+      document.getElementById('sidebar-backdrop').addEventListener('click', closeMobileSidebar);
+
+      // Allow Enter key in Reverse Resistor Lookup
+      document.getElementById('res-reverse-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') runReverseResistorLookup();
+      });
+
+      // Initialize all 5 modules cleanly
+      initDashboard();
+      setResistorMode(4);
+
+      switchCalcTab('ohms');
+      // Seed Ohm's Law with a clean starting example (12V, 1kΩ)
+      document.getElementById('ohms-V').value = '12';
+      document.getElementById('ohms-R').value = '1';
+      document.getElementById('ohms-unit-R').value = '1000';
+      ohmsState.editedOrder = ['V', 'R'];
+      solveOhmsLaw(false);
+
+      updateDivider();
+      updateLedCalc();
+
+      initRcCanvasEvents();
+      setFilterType('lowpass');
+      setRcMode('step');
+      updateRcMetrics();
+
+      setDigitalByte(42);
+      renderLogicLab();
+
+      // Start on Dashboard
+      navigateTo('dashboard');
+    });
+  </script>
+</body>
+</html>
